@@ -1,0 +1,143 @@
+name: Deploy to Render
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+
+  testing:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ROOT_PASSWORD: uvlhub_root_password
+          MYSQL_DATABASE: uvlhubdb_test
+          MYSQL_USER: uvlhub_user
+          MYSQL_PASSWORD: uvlhub_password
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run Tests
+      env:
+        FLASK_ENV: testing
+        MARIADB_HOSTNAME: 127.0.0.1
+        MARIADB_PORT: 3306
+        MARIADB_TEST_DATABASE: uvlhubdb_test
+        MARIADB_USER: uvlhub_user
+        MARIADB_PASSWORD: uvlhub_password
+      run: |
+        pytest app/modules/ --ignore-glob='*selenium*'
+
+  create-major-release-tag:
+    name: Create Major Release Tag
+    runs-on: ubuntu-latest
+    needs: testing
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - name: Checkout code with full history
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+
+    - name: Get latest tag and increment major version
+      id: versioning
+      run: |
+        # Asegurar que tenemos todos los tags del remoto
+        git fetch --tags
+        echo "Available tags:"
+        git tag -l
+        
+        # Obtener el tag más reciente
+        LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+        echo "Latest tag: $LATEST_TAG"
+        
+        # Extraer versión semántica (major.minor.patch)
+        if [[ $LATEST_TAG =~ v([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
+          MAJOR=${BASH_REMATCH[1]}
+          MINOR=${BASH_REMATCH[2]}
+          PATCH=${BASH_REMATCH[3]}
+          
+          # Incrementar versión mayor
+          NEW_MAJOR=$((MAJOR + 1))
+          NEW_VERSION="$NEW_MAJOR.0.0"
+          NEW_TAG="v$NEW_VERSION"
+          
+          echo "Incrementing MAJOR version: $LATEST_TAG → $NEW_TAG"
+        else
+          # Si no hay tags válidos, empezar desde 1.0.0
+          NEW_TAG="v1.0.0"
+          echo "No valid previous tag found, starting with: $NEW_TAG"
+        fi
+        
+        echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
+        echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+    - name: Create and push new major tag
+      run: |
+        echo "Creating new major release tag: ${{ steps.versioning.outputs.new_tag }}"
+        git config user.name "GitHub CD Action"
+        git config user.email "actions@github.com"
+        git tag -a "${{ steps.versioning.outputs.new_tag }}" -m "Major Release ${{ steps.versioning.outputs.new_tag }} - Merge trunk to main"
+        git push origin "${{ steps.versioning.outputs.new_tag }}"
+        
+        echo "🎉 Successfully created and pushed ${{ steps.versioning.outputs.new_tag }}"
+
+  deploy:
+    name: Deploy to Render
+    needs: [testing, create-major-release-tag]
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+    
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Determine deployed version
+        run: |
+          if [[ "${{ github.ref }}" == refs/heads/main ]]; then
+            echo "🚀 Deploying MAJOR RELEASE: ${{ needs.create-major-release-tag.outputs.new_tag }}"
+          else
+            echo "🚀 Deploying EXISTING TAG: ${{ github.ref }}"
+          fi
+
+      - name: Deploy to Render
+        env:
+          deploy_url: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          echo "Triggering deployment to Render..."
+          response=$(curl -s -o response.txt -w "%{http_code}" "$deploy_url")
+          if [ "$response" -eq 200 ]; then
+            echo "✅ Deployment triggered successfully"
+            cat response.txt
+          else
+            echo "❌ Deployment failed with HTTP $response"
+            cat response.txt
+            exit 1
+          fi

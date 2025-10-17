@@ -55,7 +55,6 @@ jobs:
     name: Detect Version Bump Type
     runs-on: ubuntu-latest
     needs: testing
-    # CONDICIÓN CORREGIDA
     if: ${{ needs.testing.result == 'success' }}
     
     outputs:
@@ -86,7 +85,6 @@ jobs:
     name: Create Release Tag
     runs-on: ubuntu-latest
     needs: [testing, detect-version-bump]
-    # CONDICIÓN CORREGIDA
     if: ${{ needs.testing.result == 'success' && needs.detect-version-bump.result == 'success' }}
     
     steps:
@@ -116,18 +114,55 @@ jobs:
             NEW_MINOR=$((MINOR + 1))
             NEW_VERSION="$MAJOR.$NEW_MINOR.0"
             NEW_TAG="v$NEW_VERSION"
-            echo "Incrementing MINOR version: $LATEST_TAG → $NEW_TAG"
+            echo "Calculated MINOR version: $LATEST_TAG → $NEW_TAG"
           else
             NEW_MAJOR=$((MAJOR + 1))
             NEW_VERSION="$NEW_MAJOR.0.0"
             NEW_TAG="v$NEW_VERSION"
-            echo "Incrementing MAJOR version: $LATEST_TAG → $NEW_TAG"
+            echo "Calculated MAJOR version: $LATEST_TAG → $NEW_TAG"
           fi
         else
           NEW_TAG="v1.0.0"
           echo "No valid previous tag found, starting with: $NEW_TAG"
         fi
         
+        # VERIFICAR SI EL TAG YA EXISTE Y INCREMENTAR HASTA ENCONTRAR UNO DISPONIBLE
+        COUNTER=0
+        while git rev-parse "$NEW_TAG" >/dev/null 2>&1 && [ $COUNTER -lt 10 ]; do
+          echo "⚠️  Tag $NEW_TAG already exists! Incrementing..."
+          
+          if [[ "${{ needs.detect-version-bump.outputs.version_bump }}" == "minor" ]]; then
+            # Para MINOR, incrementar PATCH hasta encontrar tag disponible
+            if [[ $NEW_TAG =~ v([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
+              MAJOR_TEMP=${BASH_REMATCH[1]}
+              MINOR_TEMP=${BASH_REMATCH[2]}
+              PATCH_TEMP=${BASH_REMATCH[3]}
+              NEW_PATCH=$((PATCH_TEMP + 1))
+              NEW_VERSION="$MAJOR_TEMP.$MINOR_TEMP.$NEW_PATCH"
+              NEW_TAG="v$NEW_VERSION"
+            else
+              # Fallback: incrementar MINOR
+              NEW_MINOR=$((NEW_MINOR + 1))
+              NEW_VERSION="$MAJOR.$NEW_MINOR.0"
+              NEW_TAG="v$NEW_VERSION"
+            fi
+          else
+            # Para MAJOR, incrementar MAJOR hasta encontrar tag disponible
+            NEW_MAJOR=$((NEW_MAJOR + 1))
+            NEW_VERSION="$NEW_MAJOR.0.0"
+            NEW_TAG="v$NEW_VERSION"
+          fi
+          
+          COUNTER=$((COUNTER + 1))
+          echo "New calculated tag: $NEW_TAG"
+        done
+        
+        if [ $COUNTER -eq 10 ]; then
+          echo "❌ Error: Could not find available tag after 10 attempts"
+          exit 1
+        fi
+        
+        echo "✅ Final available tag: $NEW_TAG"
         echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
 
     - name: Create and push new tag
@@ -141,9 +176,8 @@ jobs:
 
   deploy:
     name: Deploy to Render
-    runs-on: ubuntu-latest  # ← ESTA LÍNEA FALTABA
+    runs-on: ubuntu-latest
     needs: [testing, create-release-tag]
-    # CONDICIÓN CORREGIDA
     if: ${{ needs.testing.result == 'success' && needs.create-release-tag.result == 'success' }}
     
     steps:

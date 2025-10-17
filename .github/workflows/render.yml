@@ -94,7 +94,7 @@ jobs:
         token: ${{ secrets.PAT_TOKEN }}
         fetch-depth: 0
 
-    - name: Get latest tag and increment version
+    - name: Get latest tag and find available version
       id: versioning
       run: |
         git fetch --tags
@@ -105,65 +105,61 @@ jobs:
         echo "Latest tag: $LATEST_TAG"
         echo "Bump type: ${{ needs.detect-version-bump.outputs.version_bump }}"
         
+        # EXTRAER VERSIÓN ACTUAL
         if [[ $LATEST_TAG =~ v([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
           MAJOR=${BASH_REMATCH[1]}
           MINOR=${BASH_REMATCH[2]}
           PATCH=${BASH_REMATCH[3]}
-          
-          if [[ "${{ needs.detect-version-bump.outputs.version_bump }}" == "minor" ]]; then
-            NEW_MINOR=$((MINOR + 1))
-            NEW_VERSION="$MAJOR.$NEW_MINOR.0"
-            NEW_TAG="v$NEW_VERSION"
-            echo "Calculated MINOR version: $LATEST_TAG → $NEW_TAG"
-          else
-            NEW_MAJOR=$((MAJOR + 1))
-            NEW_VERSION="$NEW_MAJOR.0.0"
-            NEW_TAG="v$NEW_VERSION"
-            echo "Calculated MAJOR version: $LATEST_TAG → $NEW_TAG"
-          fi
         else
-          NEW_TAG="v1.0.0"
-          echo "No valid previous tag found, starting with: $NEW_TAG"
+          MAJOR=1
+          MINOR=0
+          PATCH=0
         fi
         
-        # VERIFICAR SI EL TAG YA EXISTE Y INCREMENTAR HASTA ENCONTRAR UNO DISPONIBLE
-        COUNTER=0
-        while git rev-parse "$NEW_TAG" >/dev/null 2>&1 && [ $COUNTER -lt 10 ]; do
-          echo "⚠️  Tag $NEW_TAG already exists! Incrementing..."
-          
+        # CALCULAR NUEVA VERSIÓN BASE
+        if [[ "${{ needs.detect-version-bump.outputs.version_bump }}" == "minor" ]]; then
+          NEW_MINOR=$((MINOR + 1))
+          NEW_PATCH=0
+          echo "Base calculation: MINOR bump $MAJOR.$MINOR.$PATCH → $MAJOR.$NEW_MINOR.$NEW_PATCH"
+        else
+          NEW_MAJOR=$((MAJOR + 1))
+          NEW_MINOR=0
+          NEW_PATCH=0
+          echo "Base calculation: MAJOR bump $MAJOR.$MINOR.$PATCH → $NEW_MAJOR.$NEW_MINOR.$NEW_PATCH"
+        fi
+        
+        # BUSCAR PRIMER TAG DISPONIBLE
+        ATTEMPT=0
+        while [ $ATTEMPT -lt 20 ]; do
           if [[ "${{ needs.detect-version-bump.outputs.version_bump }}" == "minor" ]]; then
-            # Para MINOR, incrementar PATCH hasta encontrar tag disponible
-            if [[ $NEW_TAG =~ v([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
-              MAJOR_TEMP=${BASH_REMATCH[1]}
-              MINOR_TEMP=${BASH_REMATCH[2]}
-              PATCH_TEMP=${BASH_REMATCH[3]}
-              NEW_PATCH=$((PATCH_TEMP + 1))
-              NEW_VERSION="$MAJOR_TEMP.$MINOR_TEMP.$NEW_PATCH"
-              NEW_TAG="v$NEW_VERSION"
-            else
-              # Fallback: incrementar MINOR
-              NEW_MINOR=$((NEW_MINOR + 1))
-              NEW_VERSION="$MAJOR.$NEW_MINOR.0"
-              NEW_TAG="v$NEW_VERSION"
-            fi
+            CANDIDATE_TAG="v$MAJOR.$NEW_MINOR.$NEW_PATCH"
           else
-            # Para MAJOR, incrementar MAJOR hasta encontrar tag disponible
-            NEW_MAJOR=$((NEW_MAJOR + 1))
-            NEW_VERSION="$NEW_MAJOR.0.0"
-            NEW_TAG="v$NEW_VERSION"
+            CANDIDATE_TAG="v$NEW_MAJOR.$NEW_MINOR.$NEW_PATCH"
           fi
           
-          COUNTER=$((COUNTER + 1))
-          echo "New calculated tag: $NEW_TAG"
+          if ! git rev-parse "$CANDIDATE_TAG" >/dev/null 2>&1; then
+            echo "✅ Found available tag: $CANDIDATE_TAG"
+            NEW_TAG="$CANDIDATE_TAG"
+            break
+          else
+            echo "⚠️  Tag $CANDIDATE_TAG exists, trying next..."
+            if [[ "${{ needs.detect-version-bump.outputs.version_bump }}" == "minor" ]]; then
+              NEW_PATCH=$((NEW_PATCH + 1))
+            else
+              NEW_MAJOR=$((NEW_MAJOR + 1))
+            fi
+          fi
+          
+          ATTEMPT=$((ATTEMPT + 1))
         done
         
-        if [ $COUNTER -eq 10 ]; then
-          echo "❌ Error: Could not find available tag after 10 attempts"
+        if [ $ATTEMPT -eq 20 ]; then
+          echo "❌ Error: Could not find available tag after 20 attempts"
           exit 1
         fi
         
-        echo "✅ Final available tag: $NEW_TAG"
         echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
+        echo "Final tag to create: $NEW_TAG"
 
     - name: Create and push new tag
       run: |

@@ -1,9 +1,8 @@
 name: Deploy to Render
 
+# SOLUCIÓN: Solo triggers en branches, NO en tags
 on:
   push:
-    tags:
-      - 'v*'
     branches:
       - main
   pull_request:
@@ -15,6 +14,8 @@ jobs:
   testing:
     name: Run Tests
     runs-on: ubuntu-latest
+    # Condición adicional para seguridad
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     services:
       mysql:
@@ -161,7 +162,7 @@ jobs:
         echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
         echo "Final tag to create: $NEW_TAG"
 
-    - name: Create tag using GitHub API (avoid loop)
+    - name: Create tag using GitHub API
       run: |
         echo "Creating tag ${{ steps.versioning.outputs.new_tag }} using GitHub API..."
         curl -X POST \
@@ -195,8 +196,9 @@ jobs:
         run: |
           echo "Triggering deployment to Render..."
           response=$(curl -s -o response.txt -w "%{http_code}" "$deploy_url")
-          if [ "$response" -eq 200 ]; then
-            echo "✅ Deployment triggered successfully"
+          # ACEPTAR tanto 200 como 202
+          if [ "$response" -eq 200 ] || [ "$response" -eq 202 ]; then
+            echo "✅ Deployment triggered successfully (HTTP $response - Accepted)"
             cat response.txt
           else
             echo "❌ Deployment failed with HTTP $response"

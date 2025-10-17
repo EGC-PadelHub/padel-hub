@@ -161,14 +161,18 @@ jobs:
         echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
         echo "Final tag to create: $NEW_TAG"
 
-    - name: Create and push new tag
+    - name: Create tag using GitHub API (avoid loop)
       run: |
-        echo "Creating new release tag: ${{ steps.versioning.outputs.new_tag }}"
-        git config user.name "GitHub CD Action"
-        git config user.email "actions@github.com"
-        git tag -a "${{ steps.versioning.outputs.new_tag }}" -m "Release ${{ steps.versioning.outputs.new_tag }} - ${{ needs.detect-version-bump.outputs.version_bump }} version bump"
-        git push origin "${{ steps.versioning.outputs.new_tag }}"
-        echo "🎉 Successfully created and pushed ${{ steps.versioning.outputs.new_tag }}"
+        echo "Creating tag ${{ steps.versioning.outputs.new_tag }} using GitHub API..."
+        curl -X POST \
+          -H "Authorization: token ${{ secrets.PAT_TOKEN }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          "https://api.github.com/repos/${{ github.repository }}/git/refs" \
+          -d '{
+            "ref": "refs/tags/${{ steps.versioning.outputs.new_tag }}",
+            "sha": "${{ github.sha }}"
+          }'
+        echo "🎉 Successfully created tag ${{ steps.versioning.outputs.new_tag }} via API"
 
   deploy:
     name: Deploy to Render

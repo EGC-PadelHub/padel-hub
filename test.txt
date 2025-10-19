@@ -1,2 +1,0 @@
-coverage test OK
-unit test OK

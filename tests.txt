@@ -1,2 +1,2 @@
-testing coverage ok
-testing unit ok
+testing coverage OK
+testing unit OK

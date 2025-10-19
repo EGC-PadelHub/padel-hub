@@ -1,3 +1,4 @@
 testing coverage OK
 testing unit OK
 testing GUI OK
+testing load OK 

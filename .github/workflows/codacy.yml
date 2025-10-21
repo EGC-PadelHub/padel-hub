@@ -3,11 +3,9 @@ name: Codacy CI
 on:
   push:
     branches:
-      - main
       - trunk
   pull_request:
     branches:
-      - main
       - trunk
 
 jobs:

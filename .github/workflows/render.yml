@@ -1,0 +1,207 @@
+name: Deploy to Render
+
+# SOLUCIÓN: Solo triggers en branches, NO en tags
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+
+  testing:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    # Condición adicional para seguridad
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ROOT_PASSWORD: padelhub_root_password
+          MYSQL_DATABASE: padelhubdb_test
+          MYSQL_USER: padelhub_user
+          MYSQL_PASSWORD: padelhub_password
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run Tests
+      env:
+        FLASK_ENV: testing
+        MARIADB_HOSTNAME: 127.0.0.1
+        MARIADB_PORT: 3306
+        MARIADB_TEST_DATABASE: padelhubdb_test
+        MARIADB_USER: padelhub_user
+        MARIADB_PASSWORD: padelhub_password
+      run: |
+        pytest app/modules/ --ignore-glob='*selenium*'
+
+  detect-version-bump:
+    name: Detect Version Bump Type
+    runs-on: ubuntu-latest
+    needs: testing
+    if: ${{ needs.testing.result == 'success' }}
+    
+    outputs:
+      version_bump: ${{ steps.detect.outputs.bump_type }}
+    
+    steps:
+    - name: Checkout code with full history
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.PAT_TOKEN }}
+        fetch-depth: 0
+
+    - name: Detect version bump from commit message
+      id: detect
+      run: |
+        COMMIT_MSG=$(git log -1 --pretty=%B)
+        echo "Commit message: $COMMIT_MSG"
+        
+        if [[ "$COMMIT_MSG" =~ [Ff]ix ]]; then
+          echo "🔧 Detected 'fix' in commit message - will bump MINOR version"
+          echo "bump_type=minor" >> $GITHUB_OUTPUT
+        else
+          echo "🚀 No 'fix' detected - will bump MAJOR version (default)"
+          echo "bump_type=major" >> $GITHUB_OUTPUT
+        fi
+
+  create-release-tag:
+    name: Create Release Tag
+    runs-on: ubuntu-latest
+    needs: [testing, detect-version-bump]
+    if: ${{ needs.testing.result == 'success' && needs.detect-version-bump.result == 'success' }}
+    
+    steps:
+    - name: Checkout code with full history
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.PAT_TOKEN }}
+        fetch-depth: 0
+
+    - name: Get latest tag and find available version
+      id: versioning
+      run: |
+        git fetch --tags
+        echo "Available tags:"
+        git tag -l
+        
+        LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+        echo "Latest tag: $LATEST_TAG"
+        echo "Bump type: ${{ needs.detect-version-bump.outputs.version_bump }}"
+        
+        # EXTRAER VERSIÓN ACTUAL
+        if [[ $LATEST_TAG =~ v([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
+          MAJOR=${BASH_REMATCH[1]}
+          MINOR=${BASH_REMATCH[2]}
+          PATCH=${BASH_REMATCH[3]}
+        else
+          MAJOR=1
+          MINOR=0
+          PATCH=0
+        fi
+        
+        # CALCULAR NUEVA VERSIÓN BASE
+        if [[ "${{ needs.detect-version-bump.outputs.version_bump }}" == "minor" ]]; then
+          NEW_MINOR=$((MINOR + 1))
+          NEW_PATCH=0
+          echo "Base calculation: MINOR bump $MAJOR.$MINOR.$PATCH → $MAJOR.$NEW_MINOR.$NEW_PATCH"
+        else
+          NEW_MAJOR=$((MAJOR + 1))
+          NEW_MINOR=0
+          NEW_PATCH=0
+          echo "Base calculation: MAJOR bump $MAJOR.$MINOR.$PATCH → $NEW_MAJOR.$NEW_MINOR.$NEW_PATCH"
+        fi
+        
+        # BUSCAR PRIMER TAG DISPONIBLE
+        ATTEMPT=0
+        while [ $ATTEMPT -lt 20 ]; do
+          if [[ "${{ needs.detect-version-bump.outputs.version_bump }}" == "minor" ]]; then
+            CANDIDATE_TAG="v$MAJOR.$NEW_MINOR.$NEW_PATCH"
+          else
+            CANDIDATE_TAG="v$NEW_MAJOR.$NEW_MINOR.$NEW_PATCH"
+          fi
+          
+          if ! git rev-parse "$CANDIDATE_TAG" >/dev/null 2>&1; then
+            echo "✅ Found available tag: $CANDIDATE_TAG"
+            NEW_TAG="$CANDIDATE_TAG"
+            break
+          else
+            echo "⚠️  Tag $CANDIDATE_TAG exists, trying next..."
+            if [[ "${{ needs.detect-version-bump.outputs.version_bump }}" == "minor" ]]; then
+              NEW_PATCH=$((NEW_PATCH + 1))
+            else
+              NEW_MAJOR=$((NEW_MAJOR + 1))
+            fi
+          fi
+          
+          ATTEMPT=$((ATTEMPT + 1))
+        done
+        
+        if [ $ATTEMPT -eq 20 ]; then
+          echo "❌ Error: Could not find available tag after 20 attempts"
+          exit 1
+        fi
+        
+        echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
+        echo "Final tag to create: $NEW_TAG"
+
+    - name: Create tag using GitHub API
+      run: |
+        echo "Creating tag ${{ steps.versioning.outputs.new_tag }} using GitHub API..."
+        curl -X POST \
+          -H "Authorization: token ${{ secrets.PAT_TOKEN }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          "https://api.github.com/repos/${{ github.repository }}/git/refs" \
+          -d '{
+            "ref": "refs/tags/${{ steps.versioning.outputs.new_tag }}",
+            "sha": "${{ github.sha }}"
+          }'
+        echo "🎉 Successfully created tag ${{ steps.versioning.outputs.new_tag }} via API"
+
+  deploy:
+    name: Deploy to Render
+    runs-on: ubuntu-latest
+    needs: [testing, create-release-tag]
+    if: ${{ needs.testing.result == 'success' && needs.create-release-tag.result == 'success' }}
+    
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Determine deployed version
+        run: |
+          echo "🚀 Deploying RELEASE: ${{ needs.create-release-tag.outputs.new_tag }}"
+          echo "Bump type: ${{ needs.detect-version-bump.outputs.version_bump }}"
+
+      - name: Deploy to Render
+        env:
+          deploy_url: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          echo "Triggering deployment to Render..."
+          response=$(curl -s -o response.txt -w "%{http_code}" "$deploy_url")
+          # ACEPTAR tanto 200 como 202
+          if [ "$response" -eq 200 ] || [ "$response" -eq 202 ]; then
+            echo "✅ Deployment triggered successfully (HTTP $response - Accepted)"
+            cat response.txt
+          else
+            echo "❌ Deployment failed with HTTP $response"
+            cat response.txt
+            exit 1
+          fi

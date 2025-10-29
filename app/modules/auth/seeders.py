@@ -10,13 +10,21 @@ class AuthSeeder(BaseSeeder):
     def run(self):
 
         # Seeding users
-        users = [
-            User(email="user1@example.com", password="1234"),
-            User(email="user2@example.com", password="1234"),
-        ]
+        # Only create users if they do not already exist to avoid duplicate key errors
+        users_to_create = []
+        for email in ("user1@example.com", "user2@example.com"):
+            existing = User.query.filter_by(email=email).first()
+            if not existing:
+                users_to_create.append(User(email=email, password="1234"))
 
-        # Inserted users with their assigned IDs are returned by `self.seed`.
-        seeded_users = self.seed(users)
+        if users_to_create:
+            # Inserted users with their assigned IDs are returned by `self.seed`.
+            seeded_users = self.seed(users_to_create)
+        else:
+            # If no new users were created, fetch the existing ones to create profiles later
+            seeded_users = []
+            for email in ("user1@example.com", "user2@example.com"):
+                seeded_users.append(User.query.filter_by(email=email).first())
 
         # Create profiles for each user inserted.
         user_profiles = []

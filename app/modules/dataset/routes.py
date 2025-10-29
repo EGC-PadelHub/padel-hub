@@ -31,6 +31,7 @@ from app.modules.dataset.services import (
     DSViewRecordService,
 )
 from app.modules.zenodo.services import ZenodoService
+from app.modules.dataset.types.tabular import TabularDataset
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +53,9 @@ def create_dataset():
         dataset = None
 
         if not form.validate_on_submit():
-            return jsonify({"message": form.errors}), 400
+            logger.error(f"Dataset form validation failed: {form.errors}")
+            # Return structured errors so the frontend can show specific field messages
+            return jsonify({"message": "Form validation failed", "errors": form.errors}), 400
 
         try:
             logger.info("Creating dataset...")
@@ -122,8 +125,9 @@ def upload():
     file = request.files["file"]
     temp_folder = current_user.temp_folder()
 
-    if not file or not file.filename.endswith(".uvl"):
-        return jsonify({"message": "No valid file"}), 400
+    # Only accept CSV files for padel-hub
+    if not file or not file.filename.lower().endswith(".csv"):
+        return jsonify({"message": "No valid file. Only .csv files are accepted."}), 400
 
     # create temp folder
     if not os.path.exists(temp_folder):
@@ -150,7 +154,7 @@ def upload():
     return (
         jsonify(
             {
-                "message": "UVL uploaded and validated successfully",
+                "message": "CSV uploaded and validated successfully",
                 "filename": new_filename,
             }
         ),
@@ -251,9 +255,29 @@ def subdomain_index(doi):
     # Get dataset
     dataset = ds_meta_data.data_set
 
+    # Prepare CSV preview rows (if any CSV file exists in the dataset)
+    csv_preview_rows = []
+    try:
+        found = False
+        for fm in dataset.feature_models:
+            for file in fm.files:
+                if file.name.lower().endswith(".csv"):
+                    csv_path = os.path.join("uploads", f"user_{dataset.user_id}", f"dataset_{dataset.id}", file.name)
+                    if os.path.exists(csv_path):
+                        tab = TabularDataset(dataset)
+                        csv_preview_rows = tab.preview(csv_path, rows=5)
+                    found = True
+                    break
+            if found:
+                break
+    except Exception as exc:
+        logger.exception(f"Exception while preparing CSV preview: {exc}")
+
     # Save the cookie to the user's browser
     user_cookie = ds_view_record_service.create_cookie(dataset=dataset)
-    resp = make_response(render_template("dataset/view_dataset.html", dataset=dataset))
+    resp = make_response(
+        render_template("dataset/view_dataset.html", dataset=dataset, csv_preview_rows=csv_preview_rows)
+    )
     resp.set_cookie("view_cookie", user_cookie)
 
     return resp
@@ -269,4 +293,22 @@ def get_unsynchronized_dataset(dataset_id):
     if not dataset:
         abort(404)
 
-    return render_template("dataset/view_dataset.html", dataset=dataset)
+    # Try to prepare CSV preview for unsynchronized dataset as well
+    csv_preview_rows = []
+    try:
+        found = False
+        for fm in dataset.feature_models:
+            for file in fm.files:
+                if file.name.lower().endswith(".csv"):
+                    csv_path = os.path.join("uploads", f"user_{dataset.user_id}", f"dataset_{dataset.id}", file.name)
+                    if os.path.exists(csv_path):
+                        tab = TabularDataset(dataset)
+                        csv_preview_rows = tab.preview(csv_path, rows=5)
+                    found = True
+                    break
+            if found:
+                break
+    except Exception as exc:
+        logger.exception(f"Exception while preparing CSV preview: {exc}")
+
+    return render_template("dataset/view_dataset.html", dataset=dataset, csv_preview_rows=csv_preview_rows)

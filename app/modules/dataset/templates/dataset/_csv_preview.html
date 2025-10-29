@@ -1,0 +1,23 @@
+{# Partial: CSV preview table #}
+{% if rows and rows|length > 0 %}
+    <div class="card mt-3">
+        <div class="card-body">
+            <h5>CSV preview</h5>
+            <div class="table-responsive">
+                <table class="table table-sm table-striped">
+                    <tbody>
+                        {% for row in rows %}
+                            <tr>
+                                {% for cell in row %}
+                                    <td>{{ cell }}</td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% else %}
+    <p class="text-muted">No preview available.</p>
+{% endif %}

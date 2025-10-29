@@ -90,7 +90,7 @@ var currentId = 0;
 
 
         document.addEventListener('click', function (event) {
-            if (event.target && event.target.classList.contains('add_author_to_uvl')) {
+            if (event.target && event.target.classList.contains('add_author_to_csv')) {
 
                 let authorsButtonId = event.target.id;
                 let authorsId = authorsButtonId.replace("_button", "");
@@ -158,7 +158,9 @@ var currentId = 0;
                     let formDataJson = JSON.stringify(formData);
                     console.log(formDataJson);
 
-                    const csrfToken = document.getElementById('csrf_token').value;
+                    // Read CSRF token by name to be robust even if the id is not present
+                    const csrfInput = document.querySelector('input[name="csrf_token"]');
+                    const csrfToken = csrfInput ? csrfInput.value : '';
                     const formUploadData = new FormData();
                     formUploadData.append('csrf_token', csrfToken);
 
@@ -210,10 +212,28 @@ var currentId = 0;
                                     });
                                 } else {
                                     response.json().then(data => {
-                                        console.error('Error: ' + data.message);
+                                        console.error('Error response from server:', data);
                                         hide_loading();
 
-                                        write_upload_error(data.message);
+                                        // If the server returned structured errors, print them clearly
+                                        if (data && data.errors && typeof data.errors === 'object') {
+                                            // data.errors is a dict of field -> [errors]
+                                            for (let field in data.errors) {
+                                                if (data.errors.hasOwnProperty(field)) {
+                                                    let messages = data.errors[field];
+                                                    if (Array.isArray(messages)) {
+                                                        messages.forEach(msg => write_upload_error(field + ': ' + msg));
+                                                    } else {
+                                                        write_upload_error(field + ': ' + messages);
+                                                    }
+                                                }
+                                            }
+                                        } else if (data && data.message) {
+                                            // fallback: just show the message string
+                                            write_upload_error(data.message);
+                                        } else {
+                                            write_upload_error('Unknown error while uploading dataset');
+                                        }
 
                                     });
                                 }

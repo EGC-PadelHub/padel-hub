@@ -184,6 +184,12 @@
 
         </div>
 
+        {# CSV preview (if available) #}
+        {% if csv_preview_rows and csv_preview_rows|length > 0 %}
+            {% set rows = csv_preview_rows %}
+            {% include 'dataset/_csv_preview.html' %}
+        {% endif %}
+
         <div class="card">
 
             <div class="card-body">
@@ -237,7 +243,7 @@
 
                 <div class="row">
                     <div class="col-12 d-flex justify-content-between align-items-center">
-                        <h4 style="margin-bottom: 0px">UVL models</h4>
+                        <h4 style="margin-bottom: 0px">CSV files</h4>
                         <h4 style="margin-bottom: 0px;"><span class="badge bg-dark">{{ dataset.get_files_count() }}</span></h4>
                     </div>
                 </div>
@@ -278,9 +284,7 @@
                                         <i data-feather="check"></i> Check
                                     </button>
                                     <ul class="dropdown-menu" aria-labelledby="btnGroupDrop{{ file.id }}">
-                                        <li>
-                                            <a class="dropdown-item" href="javascript:void(0);" onclick="checkUVL('{{ file.id }}')">Syntax check</a>
-                                        </li>
+                                        <!-- Syntax check removed for CSV-only datasets -->
                                         <!--
                                         <li>
                                             <a class="dropdown-item" href="{{ url_for('flamapy.valid', file_id=file.id) }}">SAT validity check</a>
@@ -295,9 +299,9 @@
                                     </button>
                                     <ul class="dropdown-menu" aria-labelledby="btnGroupDropExport{{ file.id }}">
                                         <li>
-                                            <a class="dropdown-item" href="{{ url_for('hubfile.download_file', file_id=file.id) }}">
-                                                UVL
-                                            </a>
+                                                <a class="dropdown-item" href="{{ url_for('hubfile.download_file', file_id=file.id) }}">
+                                                    CSV
+                                                </a>
                                             <a class="dropdown-item" href="{{ url_for('flamapy.to_glencoe', file_id=file.id) }}">
                                                 Glencoe
                                             </a>
@@ -353,14 +357,12 @@
                 </div>
             </div>
             <div class="modal-body" style="overflow-y: auto; height: calc(100vh - 50px);">
-                <pre id="fileContent" style="height: 100%; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word; background-color: #f5f5f5; padding: 20px; border-radius: 5px; border: 1px solid #ccc;"></pre>
+                <div id="fileContent" style="height: 100%; overflow-y: auto; background-color: #f5f5f5; padding: 20px; border-radius: 5px; border: 1px solid #ccc;"></div>
 
             </div>
         </div>
     </div>
 </div>
-
-<script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
 
 
 
@@ -370,12 +372,84 @@
     });
 
     var currentFileId;
+    var lastFileData = null;
 
     function viewFile(fileId) {
         fetch(`/file/view/${fileId}`)
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('fileContent').textContent = data.content;
+            .then(response => response.json().then(data => ({ status: response.status, ok: response.ok, data })))
+            .then(({ status, ok, data }) => {
+                if (!ok || !data.success) {
+                    const err = data && data.error ? data.error : 'Error loading file';
+                    // Show friendly alert and, if available, provide download link
+                    if (data && data.download_url) {
+                        if (confirm(err + "\n\nDo you want to download the file instead?")) {
+                            window.location.href = data.download_url;
+                        }
+                    } else {
+                        alert(err);
+                    }
+                    return;
+                }
+
+                // Keep the last fetched payload for copy/other actions
+                lastFileData = data;
+
+                const container = document.getElementById('fileContent');
+                container.innerHTML = '';
+
+                if (data.type === 'csv') {
+                    // Render a table
+                    const headers = data.headers || null;
+                    const rows = data.rows || [];
+                    let table = document.createElement('table');
+                    table.className = 'table table-sm table-striped table-bordered';
+                    table.style.marginBottom = '0';
+
+                    if (headers) {
+                        let thead = document.createElement('thead');
+                        let tr = document.createElement('tr');
+                        headers.forEach(h => {
+                            let th = document.createElement('th');
+                            th.textContent = h;
+                            tr.appendChild(th);
+                        });
+                        thead.appendChild(tr);
+                        table.appendChild(thead);
+                    }
+
+                    let tbody = document.createElement('tbody');
+                    rows.forEach(r => {
+                        let tr = document.createElement('tr');
+                        r.forEach(cell => {
+                            let td = document.createElement('td');
+                            td.textContent = cell;
+                            tr.appendChild(td);
+                        });
+                        tbody.appendChild(tr);
+                    });
+                    table.appendChild(tbody);
+
+                    // Add the table into a scrollable wrapper
+                    let wrapper = document.createElement('div');
+                    wrapper.style.overflowX = 'auto';
+                    wrapper.appendChild(table);
+                    container.appendChild(wrapper);
+                } else if (data.type === 'text') {
+                    // Plain text preview
+                    let pre = document.createElement('pre');
+                    pre.style.whiteSpace = 'pre-wrap';
+                    pre.style.wordWrap = 'break-word';
+                    pre.textContent = data.content;
+                    container.appendChild(pre);
+                } else {
+                    // Fallback: older endpoints returned 'content'
+                    let pre = document.createElement('pre');
+                    pre.style.whiteSpace = 'pre-wrap';
+                    pre.style.wordWrap = 'break-word';
+                    pre.textContent = data.content || '';
+                    container.appendChild(pre);
+                }
+
                 currentFileId = fileId;
                 document.getElementById('downloadButton').href = `/file/download/${fileId}`;
                 var modal = new bootstrap.Modal(document.getElementById('fileViewerModal'));
@@ -392,100 +466,23 @@
         document.getElementById("loading").style.display = "none";
     }
 
-    function checkUVL(file_id) {
-    const outputDiv = document.getElementById('check_' + file_id);
-    outputDiv.innerHTML = ''; // Clear previous output
-
-    fetch(`/flamapy/check_uvl/${file_id}`)
-        .then(response => {
-            return response.json().then(data => ({
-                status: response.status,
-                data
-            }));
-        })
-        .then(({ status, data }) => {
-            if (status === 400) {
-                // Display errors
-                if (data.errors) {
-                    outputDiv.innerHTML = '<span class="badge badge-danger">Errors:</span>';
-                    data.errors.forEach(error => {
-                        const errorElement = document.createElement('span');
-                        errorElement.className = 'badge badge-danger';
-                        errorElement.textContent = error;
-                        outputDiv.appendChild(errorElement);
-                        outputDiv.appendChild(document.createElement('br')); // Line break for better readability
-                    });
-                } else {
-                    outputDiv.innerHTML = `<span class="badge badge-danger">Error: ${data.error}</span>`;
-                }
-            } else if (status === 200) {
-                // Display success message
-                outputDiv.innerHTML = '<span class="badge badge-success">Valid Model</span>';
-            } else {
-                // Handle unexpected status
-                outputDiv.innerHTML = `<span class="badge badge-warning">Unexpected response status: ${status}</span>`;
-            }
-        })
-        .catch(error => {
-            // Handle fetch errors
-            outputDiv.innerHTML = `<span class="badge badge-danger">An unexpected error occurred: ${error.message}</span>`;
-        });
-}
-
-
-    /*
-    async function valid() {
-        showLoading()
-        let pyodide = await loadPyodide();
-        await pyodide.loadPackage("micropip");
-        const micropip = pyodide.pyimport("micropip");
-        //await micropip.install("/assets/web_assembly/antlr4_python3_runtime-4.7.2-py3-none-any.whl");
-        await micropip.install("antlr4-python3-runtime==4.13.1");
-        await micropip.install("uvlparser==2.0.1");
-        //await micropip.install("afmparser==1.0.0");
-
-        await pyodide.runPythonAsync(
-        `
-            import micropip
-            #await micropip.install("flamapy-fm-dist", deps=False)#this is to avoid problems with deps later on
-            await micropip.install("flamapy==2.0.1.dev1", deps=False);
-            await micropip.install("flamapy-fm==2.0.1.dev1", deps=False);
-            await micropip.install("flamapy-sat");
-        `
-        )
-        hideLoading()
-
-        try {
-            let output = pyodide.runPython(
-            `
-            import js
-
-            file_content = js.document.getElementById('fileContent').textContent 
-            div = js.document.createElement("result")
-
-            with open("uvlfile.uvl", "w") as text_file:
-                print(file_content, file=text_file)
-
-            from flamapy.interfaces.python.FLAMAFeatureModel import FLAMAFeatureModel
-
-            fm = FLAMAFeatureModel("uvlfile.uvl")
-            result=fm.valid()
-
-            div.innerHTML = "<div id='deleteme'>"+str(result)+"</div>"
-            exists=js.document.getElementById('deleteme')
-            if(exists):
-                exists.remove()
-
-            js.document.getElementById('result').append(div)
-            `
-        );
-        } catch (err) {
-            console.log(err);
-        }
-    }
-    */
+    // UVL-specific client-side validation removed for CSV-only mode
     function copyToClipboard() {
-        const text = document.getElementById('fileContent').textContent;
+        if (lastFileData && lastFileData.type === 'csv') {
+            // Reconstruct CSV text
+            const parts = [];
+            if (lastFileData.headers) {
+                parts.push(lastFileData.headers.join(','));
+            }
+            (lastFileData.rows || []).forEach(r => parts.push(r.join(',')));
+            const csvText = parts.join('\n');
+            navigator.clipboard.writeText(csvText).then(() => {
+                console.log('CSV copied to clipboard');
+            }).catch(err => console.error('Failed to copy CSV: ', err));
+            return;
+        }
+
+        const text = document.getElementById('fileContent').textContent || '';
         navigator.clipboard.writeText(text).then(() => {
             console.log('Text copied to clipboard');
         }).catch(err => {

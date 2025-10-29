@@ -1,0 +1,127 @@
+2025-10-28 16:28:33,350 - app - ERROR - Internal Server Error: 500 Internal Server Error: The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application.
+2025-10-29 10:45:22,158 - app.modules.dataset.routes - ERROR - Exception while create dataset data in Zenodo Failed to create deposition. Error details: {'status': 403, 'message': 'Permission denied.'}
+Traceback (most recent call last):
+  File "/home/guillermo/padel-hub/app/modules/dataset/routes.py", line 70, in create_dataset
+    zenodo_response_json = zenodo_service.create_new_deposition(dataset)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/guillermo/padel-hub/app/modules/zenodo/services.py", line 178, in create_new_deposition
+    raise Exception(error_message)
+Exception: Failed to create deposition. Error details: {'status': 403, 'message': 'Permission denied.'}
+2025-10-29 10:45:40,902 - app.modules.dataset.routes - ERROR - Exception while preparing CSV preview: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+Traceback (most recent call last):
+  File "/home/guillermo/padel-hub/app/modules/dataset/routes.py", line 304, in get_unsynchronized_dataset
+    csv_preview_rows = tab.preview(csv_path, rows=5)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/guillermo/padel-hub/app/modules/dataset/types/tabular.py", line 38, in preview
+    for i, row in enumerate(reader):
+                  ^^^^^^^^^^^^^^^^^
+  File "<frozen codecs>", line 322, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2025-10-29 10:46:01,033 - app.modules.dataset.routes - ERROR - Exception while preparing CSV preview: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+Traceback (most recent call last):
+  File "/home/guillermo/padel-hub/app/modules/dataset/routes.py", line 304, in get_unsynchronized_dataset
+    csv_preview_rows = tab.preview(csv_path, rows=5)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/guillermo/padel-hub/app/modules/dataset/types/tabular.py", line 38, in preview
+    for i, row in enumerate(reader):
+                  ^^^^^^^^^^^^^^^^^
+  File "<frozen codecs>", line 322, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2025-10-29 10:49:35,014 - app.modules.dataset.routes - ERROR - Exception while preparing CSV preview: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+Traceback (most recent call last):
+  File "/home/guillermo/padel-hub/app/modules/dataset/routes.py", line 304, in get_unsynchronized_dataset
+    csv_preview_rows = tab.preview(csv_path, rows=5)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/guillermo/padel-hub/app/modules/dataset/types/tabular.py", line 38, in preview
+    for i, row in enumerate(reader):
+                  ^^^^^^^^^^^^^^^^^
+  File "<frozen codecs>", line 322, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2025-10-29 10:55:36,510 - app.modules.dataset.routes - ERROR - Exception while preparing CSV preview: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+Traceback (most recent call last):
+  File "/home/guillermo/padel-hub/app/modules/dataset/routes.py", line 304, in get_unsynchronized_dataset
+    csv_preview_rows = tab.preview(csv_path, rows=5)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/guillermo/padel-hub/app/modules/dataset/types/tabular.py", line 38, in preview
+    for i, row in enumerate(reader):
+                  ^^^^^^^^^^^^^^^^^
+  File "<frozen codecs>", line 322, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2025-10-29 11:02:24,335 - app.modules.dataset.routes - ERROR - Exception while preparing CSV preview: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+Traceback (most recent call last):
+  File "/home/guillermo/padel-hub/app/modules/dataset/routes.py", line 304, in get_unsynchronized_dataset
+    csv_preview_rows = tab.preview(csv_path, rows=5)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/guillermo/padel-hub/app/modules/dataset/types/tabular.py", line 38, in preview
+    for i, row in enumerate(reader):
+                  ^^^^^^^^^^^^^^^^^
+  File "<frozen codecs>", line 322, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2025-10-29 11:07:28,410 - app.modules.dataset.routes - ERROR - Exception while preparing CSV preview: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+Traceback (most recent call last):
+  File "/home/guillermo/padel-hub/app/modules/dataset/routes.py", line 304, in get_unsynchronized_dataset
+    csv_preview_rows = tab.preview(csv_path, rows=5)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/guillermo/padel-hub/app/modules/dataset/types/tabular.py", line 38, in preview
+    for i, row in enumerate(reader):
+                  ^^^^^^^^^^^^^^^^^
+  File "<frozen codecs>", line 322, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2025-10-29 11:56:59,018 - app.modules.dataset.routes - ERROR - Exception while create dataset data in Zenodo Failed to create deposition. Error details: {'status': 403, 'message': 'Permission denied.'}
+Traceback (most recent call last):
+  File "/home/guillermo/padel-hub/app/modules/dataset/routes.py", line 72, in create_dataset
+    zenodo_response_json = zenodo_service.create_new_deposition(dataset)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/guillermo/padel-hub/app/modules/zenodo/services.py", line 178, in create_new_deposition
+    raise Exception(error_message)
+Exception: Failed to create deposition. Error details: {'status': 403, 'message': 'Permission denied.'}
+2025-10-29 11:57:02,177 - app.modules.dataset.routes - ERROR - Exception while preparing CSV preview: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+Traceback (most recent call last):
+  File "/home/guillermo/padel-hub/app/modules/dataset/routes.py", line 306, in get_unsynchronized_dataset
+    csv_preview_rows = tab.preview(csv_path, rows=5)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/guillermo/padel-hub/app/modules/dataset/types/tabular.py", line 38, in preview
+    for i, row in enumerate(reader):
+                  ^^^^^^^^^^^^^^^^^
+  File "<frozen codecs>", line 322, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2025-10-29 11:57:59,304 - app.modules.dataset.routes - ERROR - Exception while preparing CSV preview: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+Traceback (most recent call last):
+  File "/home/guillermo/padel-hub/app/modules/dataset/routes.py", line 306, in get_unsynchronized_dataset
+    csv_preview_rows = tab.preview(csv_path, rows=5)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/guillermo/padel-hub/app/modules/dataset/types/tabular.py", line 38, in preview
+    for i, row in enumerate(reader):
+                  ^^^^^^^^^^^^^^^^^
+  File "<frozen codecs>", line 322, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2025-10-29 13:14:46,355 - app.modules.dataset.routes - ERROR - Dataset form validation failed: {'csrf_token': ['The CSRF token has expired.']}
+2025-10-29 13:14:53,383 - app.modules.dataset.routes - ERROR - Dataset form validation failed: {'csrf_token': ['The CSRF token has expired.']}
+2025-10-29 13:15:49,588 - app.modules.dataset.routes - ERROR - Dataset form validation failed: {'csrf_token': ['The CSRF token has expired.']}
+2025-10-29 13:15:54,987 - app.modules.dataset.routes - ERROR - Dataset form validation failed: {'csrf_token': ['The CSRF token has expired.']}
+2025-10-29 13:16:35,895 - app.modules.dataset.routes - ERROR - Exception while create dataset data in Zenodo Failed to create deposition. Error details: {'status': 403, 'message': 'Permission denied.'}
+Traceback (most recent call last):
+  File "/home/guillermo/padel-hub/app/modules/dataset/routes.py", line 72, in create_dataset
+    zenodo_response_json = zenodo_service.create_new_deposition(dataset)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/guillermo/padel-hub/app/modules/zenodo/services.py", line 178, in create_new_deposition
+    raise Exception(error_message)
+Exception: Failed to create deposition. Error details: {'status': 403, 'message': 'Permission denied.'}
+2025-10-29 13:16:57,497 - app.modules.dataset.routes - ERROR - Exception while preparing CSV preview: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+Traceback (most recent call last):
+  File "/home/guillermo/padel-hub/app/modules/dataset/routes.py", line 306, in get_unsynchronized_dataset
+    csv_preview_rows = tab.preview(csv_path, rows=5)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/guillermo/padel-hub/app/modules/dataset/types/tabular.py", line 38, in preview
+    for i, row in enumerate(reader):
+                  ^^^^^^^^^^^^^^^^^
+  File "<frozen codecs>", line 322, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2025-10-29 13:17:22,996 - app.modules.dataset.routes - ERROR - Exception while create dataset data in Zenodo Failed to create deposition. Error details: {'status': 403, 'message': 'Permission denied.'}
+Traceback (most recent call last):
+  File "/home/guillermo/padel-hub/app/modules/dataset/routes.py", line 72, in create_dataset
+    zenodo_response_json = zenodo_service.create_new_deposition(dataset)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/guillermo/padel-hub/app/modules/zenodo/services.py", line 178, in create_new_deposition
+    raise Exception(error_message)
+Exception: Failed to create deposition. Error details: {'status': 403, 'message': 'Permission denied.'}

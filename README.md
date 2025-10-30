@@ -1,11 +1,11 @@
 <div style="text-align: center;">
-  <img src="https://www.uvlhub.io/static/img/logos/logo-light.svg" alt="Logo">
+  <img src="https://www.padelhub.io/static/img/logos/logo-light.png" alt="Logo">
 </div>
 
-# uvlhub.io
+# padelhub.io
 
-Repository of feature models in UVL format integrated with Zenodo and flamapy following Open Science principles - Developed by DiversoLab
+Padelhub — a CSV-first platform focused on tabel match datasets and tools for padel match analysis. Developed by DiversoLab / EGC-PadelHub.
 
 ## Official documentation
 
-You can consult the official documentation of the project at [docs.uvlhub.io](https://docs.uvlhub.io/)
+You can consult the official documentation of the project at [docs.padelhub.io](https://docs.padelhub.io/)

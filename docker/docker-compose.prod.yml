@@ -1,8 +1,7 @@
 services:
-
   web:
     container_name: web_app_container
-    image: <your_dockerhub_name>/uvlhub:latest
+    image: "${DOCKERHUB_NAME}/padel-hub:latest"
     env_file:
       - ../.env
     ports:

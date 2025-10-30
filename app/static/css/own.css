@@ -185,3 +185,26 @@
     padding: 5px;
     border-radius: 3px;
 }
+
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1rem;
+}
+
+.brand-logo {
+    max-width: 360px; /* larger default */
+    width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto; /* center inside container */
+}
+
+@media (max-width: 992px) {
+    .brand-logo { max-width: 240px; }
+}
+
+@media (max-width: 576px) {
+    .brand-logo { max-width: 140px; }
+}

@@ -1,4 +1,4 @@
-2025-10-30 13:54:27,234 - app - ERROR - Exception on /zenodo/test [GET]
+2025-10-30 12:54:21,387 - app.modules.dataset.routes - ERROR - Exception while create dataset data in Zenodo HTTPSConnectionPool(host='sandbox.zenodo.org', port=443): Max retries exceeded with url: /api/deposit/depositions (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'sandbox.zenodo.org'. (_ssl.c:1010)")))
 Traceback (most recent call last):
   File "/home/guillermo/padel-hub/venv/lib/python3.12/site-packages/urllib3/connectionpool.py", line 464, in _make_request
     self._validate_conn(conn)
@@ -52,26 +52,11 @@ urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='sandbox.zenodo.org',
 During handling of the above exception, another exception occurred:
 
 Traceback (most recent call last):
-  File "/home/guillermo/padel-hub/venv/lib/python3.12/site-packages/flask/app.py", line 1511, in wsgi_app
-    response = self.full_dispatch_request()
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/guillermo/padel-hub/venv/lib/python3.12/site-packages/flask/app.py", line 919, in full_dispatch_request
-    rv = self.handle_user_exception(e)
-         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/guillermo/padel-hub/venv/lib/python3.12/site-packages/flask_restful/__init__.py", line 298, in error_router
-    return original_handler(e)
-           ^^^^^^^^^^^^^^^^^^^
-  File "/home/guillermo/padel-hub/venv/lib/python3.12/site-packages/flask/app.py", line 917, in full_dispatch_request
-    rv = self.dispatch_request()
-         ^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/guillermo/padel-hub/venv/lib/python3.12/site-packages/flask/app.py", line 902, in dispatch_request
-    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/guillermo/padel-hub/app/modules/zenodo/routes.py", line 15, in zenodo_test
-    return service.test_full_connection()
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/guillermo/padel-hub/app/modules/zenodo/services.py", line 85, in test_full_connection
-    response = requests.post(self.ZENODO_API_URL, json=data, params=self.params, headers=self.headers)
+  File "/home/guillermo/padel-hub/app/modules/dataset/routes.py", line 72, in create_dataset
+    zenodo_response_json = zenodo_service.create_new_deposition(dataset)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/guillermo/padel-hub/app/modules/zenodo/services.py", line 175, in create_new_deposition
+    response = requests.post(self.ZENODO_API_URL, params=self.params, json=data, headers=self.headers)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/guillermo/padel-hub/venv/lib/python3.12/site-packages/requests/api.py", line 115, in post
     return request("post", url, data=data, json=json, **kwargs)
@@ -88,4 +73,23 @@ Traceback (most recent call last):
   File "/home/guillermo/padel-hub/venv/lib/python3.12/site-packages/requests/adapters.py", line 698, in send
     raise SSLError(e, request=request)
 requests.exceptions.SSLError: HTTPSConnectionPool(host='sandbox.zenodo.org', port=443): Max retries exceeded with url: /api/deposit/depositions (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'sandbox.zenodo.org'. (_ssl.c:1010)")))
-2025-10-30 13:54:27,298 - app - ERROR - Internal Server Error: 500 Internal Server Error: The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application.
+2025-10-30 12:54:36,570 - app.modules.dataset.routes - ERROR - Exception while preparing CSV preview: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+Traceback (most recent call last):
+  File "/home/guillermo/padel-hub/app/modules/dataset/routes.py", line 306, in get_unsynchronized_dataset
+    csv_preview_rows = tab.preview(csv_path, rows=5)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/guillermo/padel-hub/app/modules/dataset/types/tabular.py", line 38, in preview
+    for i, row in enumerate(reader):
+                  ^^^^^^^^^^^^^^^^^
+  File "<frozen codecs>", line 322, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2025-10-30 12:55:43,196 - app.modules.dataset.routes - ERROR - Exception while preparing CSV preview: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+Traceback (most recent call last):
+  File "/home/guillermo/padel-hub/app/modules/dataset/routes.py", line 306, in get_unsynchronized_dataset
+    csv_preview_rows = tab.preview(csv_path, rows=5)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/guillermo/padel-hub/app/modules/dataset/types/tabular.py", line 38, in preview
+    for i, row in enumerate(reader):
+                  ^^^^^^^^^^^^^^^^^
+  File "<frozen codecs>", line 322, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte

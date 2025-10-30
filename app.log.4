@@ -1,4 +1,4 @@
-2025-10-30 13:54:27,234 - app - ERROR - Exception on /zenodo/test [GET]
+2025-10-30 12:54:00,318 - app - ERROR - Exception on /zenodo/test [GET]
 Traceback (most recent call last):
   File "/home/guillermo/padel-hub/venv/lib/python3.12/site-packages/urllib3/connectionpool.py", line 464, in _make_request
     self._validate_conn(conn)
@@ -88,4 +88,4 @@ Traceback (most recent call last):
   File "/home/guillermo/padel-hub/venv/lib/python3.12/site-packages/requests/adapters.py", line 698, in send
     raise SSLError(e, request=request)
 requests.exceptions.SSLError: HTTPSConnectionPool(host='sandbox.zenodo.org', port=443): Max retries exceeded with url: /api/deposit/depositions (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'sandbox.zenodo.org'. (_ssl.c:1010)")))
-2025-10-30 13:54:27,298 - app - ERROR - Internal Server Error: 500 Internal Server Error: The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application.
+2025-10-30 12:54:00,404 - app - ERROR - Internal Server Error: 500 Internal Server Error: The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application.

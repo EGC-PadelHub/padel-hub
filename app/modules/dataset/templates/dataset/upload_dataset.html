@@ -444,12 +444,206 @@
 
                             });
 
+                                // Helper to show a simple modal with code snippet
+                                function showCsvErrorModal(filename, line, message, snippet, snippet_start) {
+                                    // remove existing modal if present
+                                    const existing = document.getElementById('csvErrorModalOverlay');
+                                    if (existing) existing.remove();
+
+                                    const overlay = document.createElement('div');
+                                    overlay.id = 'csvErrorModalOverlay';
+                                    overlay.style.position = 'fixed';
+                                    overlay.style.top = '0';
+                                    overlay.style.left = '0';
+                                    overlay.style.width = '100%';
+                                    overlay.style.height = '100%';
+                                    overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
+                                    overlay.style.display = 'flex';
+                                    overlay.style.alignItems = 'center';
+                                    overlay.style.justifyContent = 'center';
+                                    overlay.style.zIndex = '9999';
+
+                                    const box = document.createElement('div');
+                                    box.style.background = 'white';
+                                    box.style.padding = '1rem';
+                                    box.style.borderRadius = '6px';
+                                    box.style.maxWidth = '900px';
+                                    box.style.width = '90%';
+                                    box.style.maxHeight = '80%';
+                                    box.style.overflow = 'auto';
+
+                                    const title = document.createElement('h4');
+                                    title.textContent = `CSV syntax error in ${filename}`;
+                                    box.appendChild(title);
+
+                                    if (line) {
+                                        const p = document.createElement('p');
+                                        p.innerHTML = `<strong>Line:</strong> ${line}`;
+                                        box.appendChild(p);
+                                    }
+                                    if (message) {
+                                        const p = document.createElement('p');
+                                        p.innerHTML = `<strong>Message:</strong> ${message}`;
+                                        box.appendChild(p);
+                                    }
+
+                                    if (snippet) {
+                                            // Create a monospace container and split lines to allow highlighting
+                                            const container = document.createElement('div');
+                                            container.style.background = '#f6f8fa';
+                                            container.style.padding = '0.75rem';
+                                            container.style.borderRadius = '4px';
+                                            container.style.whiteSpace = 'pre';
+                                            container.style.fontFamily = 'monospace';
+                                            container.style.maxHeight = '50vh';
+                                            container.style.overflow = 'auto';
+
+                                            const lines = snippet.split(/\r?\n/);
+                                            let startLine = null;
+                                            if (typeof snippet_start !== 'undefined' && snippet_start !== null) {
+                                                startLine = parseInt(snippet_start, 10);
+                                            }
+
+                                            // Determine which line to highlight. Prefer server-provided absolute `line`,
+                                            // but fall back to a heuristic that finds the first line with an odd number
+                                            // of double quotes (common sign of unbalanced quotes), and finally clamp
+                                            // to a valid index if needed.
+                                            let highlightedIdx = null;
+                                            if (startLine !== null && typeof line !== 'undefined' && line !== null) {
+                                                const errorIndex = parseInt(line, 10) - startLine;
+                                                if (errorIndex >= 0 && errorIndex < lines.length) {
+                                                    highlightedIdx = errorIndex;
+                                                } else {
+                                                    // heuristic: find line with odd number of double quotes
+                                                    for (let h = 0; h < lines.length; h++) {
+                                                        const cnt = (lines[h].match(/\"/g) || []).length;
+                                                        if (cnt % 2 === 1) { highlightedIdx = h; break; }
+                                                    }
+                                                    // clamp to nearest line if heuristic didn't find anything
+                                                    if (highlightedIdx === null) {
+                                                        if (errorIndex < 0) highlightedIdx = 0;
+                                                        else if (errorIndex >= lines.length) highlightedIdx = lines.length - 1;
+                                                    }
+                                                }
+                                            } else {
+                                                // No startLine or server line: try heuristic only
+                                                for (let h = 0; h < lines.length; h++) {
+                                                    const cnt = (lines[h].match(/\"/g) || []).length;
+                                                    if (cnt % 2 === 1) { highlightedIdx = h; break; }
+                                                }
+                                            }
+
+                                            lines.forEach(function(ln, idx) {
+                                                const lineDiv = document.createElement('div');
+                                                // show line numbers if startLine is provided
+                                                let numSpan = null;
+                                                if (startLine !== null) {
+                                                    numSpan = document.createElement('span');
+                                                    numSpan.textContent = (startLine + idx) + ' | ';
+                                                    numSpan.style.color = '#666';
+                                                    numSpan.style.display = 'inline-block';
+                                                    numSpan.style.width = '4em';
+                                                    lineDiv.appendChild(numSpan);
+                                                }
+                                                const textSpan = document.createElement('span');
+                                                textSpan.textContent = ln;
+                                                lineDiv.appendChild(textSpan);
+
+                                                // Apply highlight if this line is the chosen one
+                                                if (highlightedIdx !== null && idx === highlightedIdx) {
+                                                    lineDiv.style.background = 'transparent';
+                                                    lineDiv.style.fontWeight = '700';
+                                                    const underlineColor = '#ff4d4f';
+                                                    textSpan.style.textDecoration = 'underline';
+                                                    textSpan.style.textDecorationColor = underlineColor;
+                                                    textSpan.style.textDecorationThickness = '2px';
+                                                    if (numSpan) {
+                                                        numSpan.style.textDecoration = 'underline';
+                                                        numSpan.style.textDecorationColor = underlineColor;
+                                                        numSpan.style.textDecorationThickness = '2px';
+                                                    }
+
+                                                    // Add a small red 'Error' badge to the right of the line for extra visibility
+                                                    const badge = document.createElement('span');
+                                                    badge.textContent = 'Error';
+                                                    badge.setAttribute('aria-hidden', 'true');
+                                                    badge.style.background = underlineColor;
+                                                    badge.style.color = '#ffffff';
+                                                    badge.style.padding = '0.12rem 0.45rem';
+                                                    badge.style.borderRadius = '4px';
+                                                    badge.style.marginLeft = '0.6rem';
+                                                    badge.style.fontSize = '0.78em';
+                                                    badge.style.fontWeight = '700';
+                                                    badge.style.display = 'inline-block';
+                                                    badge.style.verticalAlign = 'middle';
+                                                    lineDiv.appendChild(badge);
+                                                }
+
+                                                container.appendChild(lineDiv);
+                                            });
+
+                                            box.appendChild(container);
+                                        }
+
+                                    const close = document.createElement('button');
+                                    close.className = 'btn btn-primary mt-3';
+                                    close.textContent = 'Close';
+                                    close.addEventListener('click', function () { overlay.remove(); });
+                                    box.appendChild(close);
+
+                                    overlay.appendChild(box);
+                                    document.body.appendChild(overlay);
+                                }
+
                                 this.on('error', function (file, response) {
                                 console.error("Error uploading file: ", response);
-                                let alert = document.createElement('p');
-                                alert.textContent = 'CSV not valid: ' + file.name;
-                                alerts.appendChild(alert);
-                                alerts.style.display = 'block';
+                                // response may be a string or an object
+                                let errorMsg = 'CSV not valid: ' + file.name;
+                                let snippet = null;
+                                let line = null;
+                                if (response) {
+                                    try {
+                                        // If server returned JSON, Dropzone passes the parsed object
+                                        let data = response;
+                                        if (typeof response === 'string') {
+                                            try { data = JSON.parse(response); } catch (e) { data = { message: response }; }
+                                        }
+                                        if (data.error) {
+                                            errorMsg = `CSV not valid: ${file.name} — ${data.error}`;
+                                        } else if (data.message) {
+                                            errorMsg = `CSV not valid: ${file.name} — ${data.message}`;
+                                        }
+                                        if (data.line) line = data.line;
+                                        if (data.snippet) snippet = data.snippet;
+                                    } catch (e) {
+                                        console.warn('Could not parse error response', e);
+                                    }
+                                }
+                                // We intentionally do NOT append an inline alert paragraph for CSV syntax errors.
+                                // The modal will surface the error details. Keep the alert area untouched.
+                                console.log('CSV upload error (modal will show):', errorMsg);
+
+                                // Remove the file preview from Dropzone so the user can re-add a corrected file.
+                                try {
+                                    if (this && typeof this.removeFile === 'function') {
+                                        this.removeFile(file);
+                                    }
+                                } catch (e) {
+                                    console.warn('Could not remove file preview from Dropzone', e);
+                                }
+
+                                // show modal with snippet if available
+                                let snippet_start = null;
+                                if (response && typeof response === 'object' && response.snippet_start) {
+                                    snippet_start = response.snippet_start;
+                                } else if (typeof data !== 'undefined' && data && data.snippet_start) {
+                                    snippet_start = data.snippet_start;
+                                }
+
+                                // show modal with snippet if available (pass snippet_start if present)
+                                if (snippet) {
+                                    showCsvErrorModal(file.name, line, errorMsg, snippet, snippet_start);
+                                }
                             });
 
                         }

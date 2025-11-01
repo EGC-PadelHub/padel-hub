@@ -151,11 +151,39 @@ def upload():
     except Exception as e:
         return jsonify({"message": str(e)}), 500
 
+    # After saving, validate CSV syntax and report first syntax error (if any)
+    try:
+        tab = TabularDataset(None)
+        validation = tab.validate_syntax(file_path)
+    except Exception as e:
+        validation = {"valid": False, "message": f"Internal validation error: {e}"}
+
+    if not validation.get("valid"):
+        # Return helpful info to the user: line and message when available
+        resp = {"message": "CSV syntax error", "filename": new_filename}
+        if "line" in validation:
+            resp["line"] = validation["line"]
+        if "message" in validation:
+            resp["error"] = validation["message"]
+        if "encoding" in validation:
+            resp["encoding_attempted"] = validation["encoding"]
+        if "snippet" in validation and validation.get("snippet"):
+            resp["snippet"] = validation.get("snippet")
+        # Remove the saved file on validation failure to avoid leaving temp files
+        try:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+        except Exception as e:
+            logger.exception(f"Failed to remove temp file after validation failure: {e}")
+
+        return jsonify(resp), 400
+
     return (
         jsonify(
             {
                 "message": "CSV uploaded and validated successfully",
                 "filename": new_filename,
+                "encoding": validation.get("encoding"),
             }
         ),
         200,

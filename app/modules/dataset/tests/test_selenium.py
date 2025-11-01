@@ -1,9 +1,13 @@
 import os
 import time
+import tempfile
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import datetime
+import pathlib
 
 from core.environment.host import get_host_for_selenium_testing
 from core.selenium.common import close_driver, initialize_driver
@@ -134,3 +138,85 @@ def test_upload_dataset():
 
 # Call the test function
 test_upload_dataset()
+
+
+def test_upload_modal_and_error_badge():
+    """Standalone modal E2E: upload a broken CSV and assert modal + badge."""
+    driver = initialize_driver()
+    tmp_path = None
+    try:
+        host = get_host_for_selenium_testing()
+
+        # Login via UI (assumes test user exists with these creds)
+        driver.get(f"{host}/login")
+        # Use the same test user as other selenium tests for consistency
+        driver.find_element(By.NAME, "email").send_keys("user1@example.com")
+        driver.find_element(By.NAME, "password").send_keys("1234")
+        submit = driver.find_element(By.CSS_SELECTOR, "button[type='submit'], input[type='submit']")
+        submit.click()
+
+        # give a moment to login
+        time.sleep(1)
+
+        # go to upload page
+        driver.get(f"{host}/dataset/upload")
+
+        # create temp csv with unbalanced quotes
+        fd, tmp_path = tempfile.mkstemp(suffix=".csv")
+        os.close(fd)
+        content = (
+            "r13,m,13\n"
+            "r14,n,14\n"
+            "r15,o,15\n"
+            "r16,p,\"This \"has\" nested quotes and unbalanced\n"
+            "r17,q,17\n"
+            "r18,r,18\n"
+            "r19,s,19\n"
+        )
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+        # find the Dropzone file input and send file
+        # Use WebDriverWait + expected_conditions for robustness and fallback to older selector
+        try:
+            file_input = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.CLASS_NAME, "dz-hidden-input"))
+            )
+        except Exception:
+            # fallback selector used previously
+            file_input = driver.find_element(By.CSS_SELECTOR, "form#myDropzone input[type='file']")
+
+        file_input.send_keys(tmp_path)
+
+        # wait for the overlay to appear (use explicit wait)
+        try:
+            overlay = WebDriverWait(driver, 10).until(
+                EC.visibility_of_element_located((By.ID, "csvErrorModalOverlay"))
+            )
+            badge = overlay.find_element(By.XPATH, ".//span[text()='Error']")
+            assert badge is not None
+        except Exception:
+            # take a screenshot to help debugging flaky failures
+            try:
+                screenshots_dir = pathlib.Path(__file__).parent / "screenshots"
+                screenshots_dir.mkdir(parents=True, exist_ok=True)
+                ts = datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+                screenshot_path = screenshots_dir / f"selenium_failure_modal_{ts}.png"
+                driver.save_screenshot(str(screenshot_path))
+                print(f"Saved failure screenshot: {screenshot_path}")
+            except Exception:
+                print("Failed to write screenshot")
+            # re-raise the original exception so the test fails visibly
+            raise
+
+    finally:
+        try:
+            close_driver(driver)
+        except Exception:
+            pass
+        if tmp_path and os.path.exists(tmp_path):
+            os.remove(tmp_path)
+
+
+# Run the additional modal test as part of the same invocation so Rosemary picks it up
+test_upload_modal_and_error_badge()

@@ -6,12 +6,15 @@ extensions and provides a small preview (head rows) to render in templates.
 from typing import List, Dict, Any
 import csv
 import os
+import logging
 
 from .base import BaseDataset
 
 
 class TabularDataset(BaseDataset):
     type_name = "tabular"
+
+    _logger = logging.getLogger(__name__)
 
     def validate_files(self, files: List[str]) -> Dict[str, Any]:
         errors = []
@@ -59,6 +62,8 @@ class TabularDataset(BaseDataset):
         # Try reading the file with different encodings and parse incrementally
         for enc in encodings_to_try:
             try:
+                # track lineno defensively so exception handlers can reference it
+                lineno = 0
                 with open(file_path, "r", encoding=enc, newline="") as f:
                     reader = csv.reader(f)
                     for lineno, _row in enumerate(reader, start=1):
@@ -96,9 +101,9 @@ class TabularDataset(BaseDataset):
                                 "snippet": snippet,
                                 "snippet_start": snippet_start,
                             }
-                except Exception:
-                    # If snippet extraction fails, still consider the file valid for this encoding
-                    pass
+                except Exception as exc:
+                    # If snippet extraction fails, log and consider file valid for this encoding
+                    self._logger.debug("Failed to extract unbalanced-quote snippet: %s", exc)
 
                 return {"valid": True, "encoding": enc}
             except (UnicodeDecodeError, UnicodeError):
@@ -109,6 +114,10 @@ class TabularDataset(BaseDataset):
                 # The enumerate will have set lineno to the last parsed line; include message
                 # Try to provide a small snippet around the error line to help the user
                 snippet = None
+                snippet_start = None
+                # Ensure lineno has a sensible default if parsing failed early
+                if not lineno:
+                    lineno = 1
                 try:
                     with open(file_path, "r", encoding=enc, errors="replace") as ff:
                         all_lines = ff.read().splitlines()

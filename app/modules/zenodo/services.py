@@ -20,6 +20,10 @@ load_dotenv()
 class ZenodoService(BaseService):
 
     def get_zenodo_url(self):
+        # Prefer local fakenodo if configured
+        fakenodo_url = os.getenv("FAKENODO_URL")
+        if fakenodo_url:
+            return fakenodo_url
 
         FLASK_ENV = os.getenv("FLASK_ENV", "development")
         ZENODO_API_URL = ""

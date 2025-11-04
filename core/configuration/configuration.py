@@ -1,6 +1,11 @@
 import os
 
-from dotenv import load_dotenv
+# Optional dependency: python-dotenv
+try:  # pragma: no cover - optional in minimal envs
+    from dotenv import load_dotenv  # type: ignore
+except Exception:  # pragma: no cover
+    def load_dotenv(*args, **kwargs):  # type: ignore
+        return False
 
 load_dotenv()
 

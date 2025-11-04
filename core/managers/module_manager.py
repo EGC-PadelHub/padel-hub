@@ -2,7 +2,12 @@
 import importlib.util
 import os
 
-from dotenv import load_dotenv
+# Optional dotenv to support minimal test envs
+try:  # pragma: no cover - optional
+    from dotenv import load_dotenv  # type: ignore
+except Exception:  # pragma: no cover
+    def load_dotenv(*args, **kwargs):  # type: ignore
+        return False
 from flask import Blueprint
 
 load_dotenv()

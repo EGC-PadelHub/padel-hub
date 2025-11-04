@@ -120,8 +120,9 @@ def create_app():
         rows = []
         for rid, rec in store.get("records", {}).items():
             rid_int = rec.get("id")
-            conceptdoi = html.escape(rec.get("conceptdoi", ""))
-            current_doi = html.escape(rec.get("current_doi", ""))
+            # rec.get may return None if the key exists with None value; guard with or ""
+            conceptdoi = html.escape(rec.get("conceptdoi") or "")
+            current_doi = html.escape(rec.get("current_doi") or "")
             versions = rec.get("versions", [])
             vcount = len(versions)
             rows.append(

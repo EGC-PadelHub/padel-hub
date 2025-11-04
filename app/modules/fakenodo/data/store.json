@@ -1,5 +1,5 @@
 {
-  "next_id": 2,
+  "next_id": 3,
   "records": {
     "1": {
       "conceptdoi": "10.5072/fakenodo.1",
@@ -15,6 +15,70 @@
       "id": 1,
       "updated_at": "2025-11-04T11:05:07.721183Z",
       "versions": []
+    },
+    "2": {
+      "conceptdoi": "10.5072/fakenodo.2",
+      "created_at": "2025-11-04T17:10:30.952789Z",
+      "current_doi": "10.5072/fakenodo.2.v2",
+      "draft": {
+        "files": [
+          {
+            "checksum": "e8f9747fb3c0b19f279ea039112a37d6",
+            "name": "dario-v1.txt",
+            "size": 40
+          },
+          {
+            "checksum": "ad5e07aa49e9dc2215c3e9cf90c2b783",
+            "name": "dario-v2.txt",
+            "size": 40
+          }
+        ],
+        "metadata": {
+          "title": "Dario Chapra",
+          "upload_type": "dataset"
+        }
+      },
+      "id": 2,
+      "updated_at": "2025-11-04T17:13:11.363163Z",
+      "versions": [
+        {
+          "doi": "10.5072/fakenodo.2.v1",
+          "files": [
+            {
+              "checksum": "e8f9747fb3c0b19f279ea039112a37d6",
+              "name": "dario-v1.txt",
+              "size": 40
+            }
+          ],
+          "metadata": {
+            "title": "Dario Chapra",
+            "upload_type": "dataset"
+          },
+          "published_at": "2025-11-04T17:11:59.963667Z",
+          "version": 1
+        },
+        {
+          "doi": "10.5072/fakenodo.2.v2",
+          "files": [
+            {
+              "checksum": "e8f9747fb3c0b19f279ea039112a37d6",
+              "name": "dario-v1.txt",
+              "size": 40
+            },
+            {
+              "checksum": "ad5e07aa49e9dc2215c3e9cf90c2b783",
+              "name": "dario-v2.txt",
+              "size": 40
+            }
+          ],
+          "metadata": {
+            "title": "Dario Chapra",
+            "upload_type": "dataset"
+          },
+          "published_at": "2025-11-04T17:13:11.363141Z",
+          "version": 2
+        }
+      ]
     }
   }
 }

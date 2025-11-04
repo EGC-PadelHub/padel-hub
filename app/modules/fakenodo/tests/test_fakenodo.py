@@ -125,3 +125,20 @@ def test_upload_publish_versioning_rules(test_client, tmp_path):
     assert r.status_code == 200
     versions = r.get_json()
     assert len(versions) == 2
+
+
+def test_ui_pages_render_even_with_none_doi(test_client):
+    # Create a deposition without publishing so current_doi stays None
+    base = "/api/deposit/depositions"
+    r = _post_json(test_client, base, {"metadata": {"title": "CHEPA CREMA", "upload_type": "dataset"}}, status=201)
+    dep_id = r.get_json()["id"]
+
+    # UI index should render
+    r = test_client.get("/ui")
+    assert r.status_code == 200
+    assert b"Depositions" in r.data
+
+    # UI detail should render
+    r = test_client.get(f"/ui/{dep_id}")
+    assert r.status_code == 200
+    assert b"Deposition" in r.data

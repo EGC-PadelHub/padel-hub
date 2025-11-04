@@ -40,6 +40,9 @@
                                     <a href="{{ url_for('dataset.download_dataset', dataset_id=dataset.id) }}">
                                         <i data-feather="download"></i>
                                     </a>
+                                    <a href="{{ url_for('dataset.export_dataset', dataset_id=dataset.id) }}" title="Download in different formats (ZIP)">
+                                        <i data-feather="package"></i>
+                                    </a>
                                 </td>
                             </tr>
                         {% endfor %}
@@ -103,6 +106,9 @@
                                             </a>
                                             <a href="{{ url_for('dataset.download_dataset', dataset_id=local_dataset.id) }}">
                                                 <i data-feather="download"></i>
+                                            </a>
+                                            <a href="{{ url_for('dataset.export_dataset', dataset_id=local_dataset.id) }}" title="Download in different formats (ZIP)">
+                                                <i data-feather="package"></i>
                                             </a>
                                         </td>
                                     </tr>

@@ -6,6 +6,8 @@ import tempfile
 import uuid
 from datetime import datetime, timezone
 from zipfile import ZipFile
+from io import BytesIO
+import re
 
 from flask import (
     abort,
@@ -32,6 +34,15 @@ from app.modules.dataset.services import (
 )
 from app.modules.zenodo.services import ZenodoService
 from app.modules.dataset.types.tabular import TabularDataset
+
+# Optional imports for feature model conversions
+try:
+    from flamapy.metamodels.fm_metamodel.transformations import UVLReader
+    from flamapy.metamodels.pysat_metamodel.transformations import DimacsWriter, FmToPysat
+except Exception:  # pragma: no cover - only needed when exporting UVL to CNF/DIMACS
+    UVLReader = None
+    DimacsWriter = None
+    FmToPysat = None
 
 logger = logging.getLogger(__name__)
 
@@ -210,8 +221,22 @@ def download_dataset(dataset_id):
 
     file_path = f"uploads/user_{dataset.user_id}/dataset_{dataset.id}/"
 
+    # Build a friendly base name using the dataset title
+    def slugify(value: str) -> str:
+        value = value.strip().lower()
+        value = re.sub(r"[^a-z0-9\-\._]+", "-", value)
+        value = re.sub(r"-+", "-", value).strip("-")
+        return value or f"dataset-{dataset.id}"
+
+    ds_title = getattr(dataset, "name", None)
+    if callable(ds_title):
+        ds_title = ds_title()
+    if not ds_title:
+        ds_title = dataset.ds_meta_data.title if dataset.ds_meta_data and dataset.ds_meta_data.title else f"dataset-{dataset.id}"
+    base_name = f"{slugify(ds_title)}-{dataset.id}"
+
     temp_dir = tempfile.mkdtemp()
-    zip_path = os.path.join(temp_dir, f"dataset_{dataset_id}.zip")
+    zip_path = os.path.join(temp_dir, f"{base_name}.zip")
 
     with ZipFile(zip_path, "w") as zipf:
         for subdir, dirs, files in os.walk(file_path):
@@ -222,7 +247,7 @@ def download_dataset(dataset_id):
 
                 zipf.write(
                     full_path,
-                    arcname=os.path.join(os.path.basename(zip_path[:-4]), relative_path),
+                    arcname=os.path.join(base_name, relative_path),
                 )
 
     user_cookie = request.cookies.get("download_cookie")
@@ -232,7 +257,7 @@ def download_dataset(dataset_id):
         resp = make_response(
             send_from_directory(
                 temp_dir,
-                f"dataset_{dataset_id}.zip",
+                f"{base_name}.zip",
                 as_attachment=True,
                 mimetype="application/zip",
             )
@@ -241,7 +266,7 @@ def download_dataset(dataset_id):
     else:
         resp = send_from_directory(
             temp_dir,
-            f"dataset_{dataset_id}.zip",
+            f"{base_name}.zip",
             as_attachment=True,
             mimetype="application/zip",
         )
@@ -255,6 +280,304 @@ def download_dataset(dataset_id):
 
     if not existing_record:
         # Record the download in your database
+        DSDownloadRecordService().create(
+            user_id=current_user.id if current_user.is_authenticated else None,
+            dataset_id=dataset_id,
+            download_date=datetime.now(timezone.utc),
+            download_cookie=user_cookie,
+        )
+
+    return resp
+
+
+@dataset_bp.route("/dataset/export/<int:dataset_id>", methods=["GET"])
+def export_dataset(dataset_id: int):
+    """Export the dataset into multiple formats and return a single ZIP.
+
+    For each CSV file in the dataset, generate: CSV (copy), JSON, XML, XLSX.
+    For each UVL file in the dataset (if any), generate: CNF (DIMACS).
+
+    The resulting ZIP structure is:
+        dataset_<id>/
+          csv/<name>.csv
+          json/<name>.json
+          xml/<name>.xml
+          xlsx/<name>.xlsx
+          dimacs/<name>.cnf
+    """
+    dataset = dataset_service.get_or_404(dataset_id)
+
+    # Base folder where original files are stored
+    # We'll resolve file paths using HubfileService to be robust to WORKING_DIR and avoid 404
+    from app.modules.hubfile.services import HubfileService
+
+    # Friendly base name for ZIP and top-level folder
+    def slugify(value: str) -> str:
+        value = value.strip().lower()
+        value = re.sub(r"[^a-z0-9\-\._]+", "-", value)
+        value = re.sub(r"-+", "-", value).strip("-")
+        return value or f"dataset-{dataset.id}"
+
+    ds_title = getattr(dataset, "name", None)
+    if callable(ds_title):
+        ds_title = ds_title()
+    if not ds_title:
+        ds_title = dataset.ds_meta_data.title if dataset.ds_meta_data and dataset.ds_meta_data.title else f"dataset-{dataset.id}"
+    base_name = f"{slugify(ds_title)}-{dataset.id}"
+
+    temp_dir = tempfile.mkdtemp()
+    zip_path = os.path.join(temp_dir, f"{base_name}_different-formats.zip")
+
+    def _detect_header(csv_path: str):
+        import csv as _csv
+
+        # Try to detect encoding first (reuse validate_syntax heuristics)
+        encodings_to_try = ["utf-8", "utf-8-sig", "latin-1", "cp1252"]
+        enc = "utf-8"
+        for e in encodings_to_try:
+            try:
+                with open(csv_path, "r", encoding=e, newline="") as f:
+                    sample = f.read(2048)
+                enc = e
+                break
+            except Exception:
+                continue
+
+        has_header = False
+        try:
+            with open(csv_path, "r", encoding=enc, newline="") as f:
+                sample = f.read(2048)
+                f.seek(0)
+                try:
+                    has_header = _csv.Sniffer().has_header(sample)
+                except Exception:
+                    has_header = True  # default to header
+        except Exception:
+            has_header = True
+        return enc, has_header
+
+    def _csv_to_json_bytes(csv_path: str) -> bytes:
+        import csv as _csv
+
+        enc, has_header = _detect_header(csv_path)
+        with open(csv_path, "r", encoding=enc, newline="") as f:
+            if has_header:
+                reader = _csv.DictReader(f)
+                data = list(reader)
+            else:
+                reader = _csv.reader(f)
+                data = list(reader)
+        return json.dumps(data, ensure_ascii=False, indent=2).encode("utf-8")
+
+    def _csv_to_xml_bytes(csv_path: str) -> bytes:
+        import csv as _csv
+        import xml.etree.ElementTree as ET
+
+        enc, has_header = _detect_header(csv_path)
+        root = ET.Element("rows")
+        with open(csv_path, "r", encoding=enc, newline="") as f:
+            if has_header:
+                reader = _csv.DictReader(f)
+                for row in reader:
+                    row_el = ET.SubElement(root, "row")
+                    for k, v in row.items():
+                        col_el = ET.SubElement(row_el, "col", name=str(k))
+                        col_el.text = str(v) if v is not None else ""
+            else:
+                reader = _csv.reader(f)
+                for r in reader:
+                    row_el = ET.SubElement(root, "row")
+                    for idx, v in enumerate(r):
+                        col_el = ET.SubElement(row_el, "col", name=f"col{idx+1}")
+                        col_el.text = str(v) if v is not None else ""
+
+        xml_bytes = BytesIO()
+        tree = ET.ElementTree(root)
+        tree.write(xml_bytes, encoding="utf-8", xml_declaration=True)
+        return xml_bytes.getvalue()
+
+    def _csv_to_xlsx_bytes(csv_path: str) -> bytes:
+        # Lazy import to avoid hard dependency during app startup
+        try:
+            from openpyxl import Workbook  # type: ignore
+        except Exception:
+            logger.warning("openpyxl not available; skipping XLSX export for %s", csv_path)
+            return b""
+
+        import csv as _csv
+
+        enc, _ = _detect_header(csv_path)
+        wb = Workbook()
+        ws = wb.active
+        with open(csv_path, "r", encoding=enc, newline="") as f:
+            reader = _csv.reader(f)
+            for row in reader:
+                ws.append(list(row))
+        bio = BytesIO()
+        wb.save(bio)
+        return bio.getvalue()
+
+    def _uvl_to_dimacs_bytes(uvl_path: str) -> bytes:
+        if not (UVLReader and DimacsWriter and FmToPysat):
+            logger.warning("Flamapy not available; skipping DIMACS export for %s", uvl_path)
+            return b""
+
+    def _csv_to_tsv_bytes(csv_path: str) -> bytes:
+        import csv as _csv
+        from io import StringIO
+
+        enc, _ = _detect_header(csv_path)
+        output = StringIO()
+        writer = _csv.writer(output, delimiter="\t", lineterminator="\n")
+        with open(csv_path, "r", encoding=enc, newline="") as f:
+            reader = _csv.reader(f)
+            for row in reader:
+                writer.writerow(row)
+        return output.getvalue().encode("utf-8")
+
+    def _csv_to_yaml_bytes(csv_path: str) -> bytes:
+        import csv as _csv
+        import yaml  # PyYAML is in requirements
+
+        enc, has_header = _detect_header(csv_path)
+        with open(csv_path, "r", encoding=enc, newline="") as f:
+            if has_header:
+                reader = _csv.DictReader(f)
+                data = list(reader)
+            else:
+                reader = _csv.reader(f)
+                data = list(reader)
+        # Dump YAML with unicode preserved and stable key order
+        return yaml.safe_dump(data, allow_unicode=True, sort_keys=False).encode("utf-8")
+
+    def _csv_to_txt_bytes(csv_path: str) -> bytes:
+        # Provide a plain-text copy of the original CSV contents
+        # preserving original encoding best-effort.
+        enc, _ = _detect_header(csv_path)
+        with open(csv_path, "r", encoding=enc, errors="replace") as f:
+            return f.read().encode("utf-8")
+        try:
+            # Create a temporary file to use the writer API, then read bytes back
+            tmp = tempfile.NamedTemporaryFile(suffix=".cnf", delete=False)
+            tmp.close()
+            fm = UVLReader(uvl_path).transform()
+            sat = FmToPysat(fm).transform()
+            DimacsWriter(tmp.name, sat).transform()
+            with open(tmp.name, "rb") as f:
+                data = f.read()
+            os.remove(tmp.name)
+            return data
+        except Exception as exc:
+            logger.exception("Failed to convert UVL to DIMACS: %s", exc)
+            return b""
+
+    with ZipFile(zip_path, "w") as zipf:
+        # Iterate dataset files via DB and resolve absolute paths via service
+        for fm in getattr(dataset, "feature_models", []) or []:
+            for hubfile in getattr(fm, "files", []) or []:
+                try:
+                    full_path = HubfileService().get_path_by_hubfile(hubfile)
+                except Exception:
+                    full_path = None
+                if not full_path or not os.path.isfile(full_path):
+                    continue
+
+                orig_filename = os.path.basename(hubfile.name or os.path.basename(full_path))
+                file_base, ext = os.path.splitext(orig_filename)
+                ext = ext.lower()
+
+                # Include original CSVs under csv/
+                if ext == ".csv":
+                    arc_csv = os.path.join(base_name, "csv", orig_filename)
+                    try:
+                        zipf.write(full_path, arcname=arc_csv)
+                    except Exception as exc:
+                        logger.exception("Failed to add CSV to zip: %s", exc)
+
+                    # JSON
+                    try:
+                        json_bytes = _csv_to_json_bytes(full_path)
+                        zipf.writestr(os.path.join(base_name, "json", f"{file_base}.json"), json_bytes)
+                    except Exception as exc:
+                        logger.exception("CSV->JSON export failed for %s: %s", orig_filename, exc)
+
+                    # XML
+                    try:
+                        xml_bytes = _csv_to_xml_bytes(full_path)
+                        zipf.writestr(os.path.join(base_name, "xml", f"{file_base}.xml"), xml_bytes)
+                    except Exception as exc:
+                        logger.exception("CSV->XML export failed for %s: %s", orig_filename, exc)
+
+                    # XLSX
+                    try:
+                        xlsx_bytes = _csv_to_xlsx_bytes(full_path)
+                        if xlsx_bytes:
+                            zipf.writestr(os.path.join(base_name, "xlsx", f"{file_base}.xlsx"), xlsx_bytes)
+                    except Exception as exc:
+                        logger.exception("CSV->XLSX export failed for %s: %s", orig_filename, exc)
+
+                    # TSV
+                    try:
+                        tsv_bytes = _csv_to_tsv_bytes(full_path)
+                        zipf.writestr(os.path.join(base_name, "tsv", f"{file_base}.tsv"), tsv_bytes)
+                    except Exception as exc:
+                        logger.exception("CSV->TSV export failed for %s: %s", orig_filename, exc)
+
+                    # YAML
+                    try:
+                        yaml_bytes = _csv_to_yaml_bytes(full_path)
+                        zipf.writestr(os.path.join(base_name, "yaml", f"{file_base}.yaml"), yaml_bytes)
+                    except Exception as exc:
+                        logger.exception("CSV->YAML export failed for %s: %s", orig_filename, exc)
+
+                    # TXT (plain-text view of CSV)
+                    try:
+                        txt_bytes = _csv_to_txt_bytes(full_path)
+                        zipf.writestr(os.path.join(base_name, "txt", f"{file_base}.txt"), txt_bytes)
+                    except Exception as exc:
+                        logger.exception("CSV->TXT export failed for %s: %s", orig_filename, exc)
+
+                # Feature model UVL -> DIMACS
+                elif ext == ".uvl":
+                    try:
+                        dimacs_bytes = _uvl_to_dimacs_bytes(full_path)
+                        if dimacs_bytes:
+                            zipf.writestr(os.path.join(base_name, "dimacs", f"{file_base}.cnf"), dimacs_bytes)
+                            # Also provide .dimacs extension for convenience
+                            zipf.writestr(os.path.join(base_name, "dimacs", f"{file_base}.dimacs"), dimacs_bytes)
+                    except Exception as exc:
+                        logger.exception("UVL->DIMACS export failed for %s: %s", orig_filename, exc)
+                else:
+                    # Copy other files as-is under original/
+                    rel_name = orig_filename
+                    arc_other = os.path.join(base_name, "original", rel_name)
+                    try:
+                        zipf.write(full_path, arcname=arc_other)
+                    except Exception as exc:
+                        logger.exception("Failed to add file to zip: %s", exc)
+
+    # Manage download cookie and record
+    user_cookie = request.cookies.get("download_cookie")
+    if not user_cookie:
+        user_cookie = str(uuid.uuid4())
+        resp = make_response(
+            send_from_directory(
+                temp_dir, f"{base_name}_different-formats.zip", as_attachment=True, mimetype="application/zip"
+            )
+        )
+        resp.set_cookie("download_cookie", user_cookie)
+    else:
+        resp = send_from_directory(
+            temp_dir, f"{base_name}_different-formats.zip", as_attachment=True, mimetype="application/zip"
+        )
+
+    existing_record = DSDownloadRecord.query.filter_by(
+        user_id=current_user.id if current_user.is_authenticated else None,
+        dataset_id=dataset_id,
+        download_cookie=user_cookie,
+    ).first()
+
+    if not existing_record:
         DSDownloadRecordService().create(
             user_id=current_user.id if current_user.is_authenticated else None,
             dataset_id=dataset_id,

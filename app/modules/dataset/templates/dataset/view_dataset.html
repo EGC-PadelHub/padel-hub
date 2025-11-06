@@ -77,17 +77,21 @@
                         </span>
                     </div>
                     <div class="col-md-8 col-12">
-                        {% for author in dataset.ds_meta_data.authors %}
-                        <p class="p-0 m-0">
-                            {{ author.name }}
-                            {% if author.affiliation %}
-                            ({{ author.affiliation }})
-                            {% endif %}
-                            {% if author.orcid %}
-                            ({{ author.orcid }})
-                            {% endif %}
-                        </p>
-                        {% endfor %}
+                        {% if dataset.ds_meta_data and dataset.ds_meta_data.anonymous %}
+                            <p class="p-0 m-0">Anonymous</p>
+                        {% else %}
+                            {% for author in dataset.ds_meta_data.authors %}
+                                <p class="p-0 m-0">
+                                    {{ author.name }}
+                                    {% if author.affiliation %}
+                                        ({{ author.affiliation }})
+                                    {% endif %}
+                                    {% if author.orcid %}
+                                        ({{ author.orcid }})
+                                    {% endif %}
+                                </p>
+                            {% endfor %}
+                        {% endif %}
                     </div>
 
 

@@ -11,6 +11,7 @@ import re
 
 from flask import (
     abort,
+    flash,
     jsonify,
     make_response,
     redirect,
@@ -20,6 +21,7 @@ from flask import (
     url_for,
 )
 from flask_login import current_user, login_required
+from flask_wtf.csrf import generate_csrf
 
 from app.modules.dataset import dataset_bp
 from app.modules.dataset.forms import DataSetForm
@@ -79,16 +81,24 @@ def create_dataset():
 
         # send dataset as deposition to Zenodo
         data = {}
-        try:
-            zenodo_response_json = zenodo_service.create_new_deposition(dataset)
-            response_data = json.dumps(zenodo_response_json)
-            data = json.loads(response_data)
-        except Exception as exc:
+        # If user chose to save as draft or as anonymous upload, skip contacting Zenodo/fakenodo now.
+        # Anonymous uploads must remain local (unsynchronized) until the user explicitly clicks Sync.
+        if getattr(form, 'upload_type', None) and form.upload_type.data in ('draft', 'anonymous'):
             data = {}
             zenodo_response_json = {}
-            logger.exception(f"Exception while create dataset data in Zenodo {exc}")
+        else:
+            try:
+                zenodo_response_json = zenodo_service.create_new_deposition(dataset)
+                response_data = json.dumps(zenodo_response_json)
+                data = json.loads(response_data)
+            except Exception as exc:
+                data = {}
+                zenodo_response_json = {}
+                logger.exception(f"Exception while create dataset data in Zenodo {exc}")
 
-        if data.get("conceptrecid"):
+        # Some Zenodo/fakenodo endpoints may not return `conceptrecid` but they do return an `id`.
+        # Accept either `conceptrecid` or `id` as indication that the deposition was created.
+        if data.get("conceptrecid") or data.get("id"):
             deposition_id = data.get("id")
 
             # update dataset with deposition id in Zenodo
@@ -123,10 +133,18 @@ def create_dataset():
 @dataset_bp.route("/dataset/list", methods=["GET", "POST"])
 @login_required
 def list_dataset():
+    # Ensure a CSRF token is available for inline forms (e.g. sync action)
+    csrf_token = None
+    try:
+        csrf_token = generate_csrf()
+    except Exception:
+        csrf_token = None
+
     return render_template(
         "dataset/list_datasets.html",
         datasets=dataset_service.get_synchronized(current_user.id),
         local_datasets=dataset_service.get_unsynchronized(current_user.id),
+        csrf_token=csrf_token,
     )
 
 
@@ -663,3 +681,77 @@ def get_unsynchronized_dataset(dataset_id):
         logger.exception(f"Exception while preparing CSV preview: {exc}")
 
     return render_template("dataset/view_dataset.html", dataset=dataset, csv_preview_rows=csv_preview_rows)
+
+
+@dataset_bp.route("/dataset/unsynchronized/<int:dataset_id>/sync", methods=["POST"]) 
+@login_required
+def sync_unsynchronized_dataset(dataset_id):
+    """Synchronize a previously saved (unsynchronized) dataset with Zenodo/fakenodo and publish it.
+
+    If the dataset was created with the anonymous flag, publishing will expose the real authors (user action).
+    """
+    dataset = dataset_service.get_unsynchronized_dataset(current_user.id, dataset_id)
+    if not dataset:
+        abort(404)
+
+    # Check connection to Zenodo (or fakenodo) first
+    try:
+        ok = zenodo_service.test_connection()
+    except Exception:
+        ok = False
+
+    if not ok:
+        logger.error(
+            "Zenodo/fakenodo API not reachable at %s",
+            getattr(zenodo_service, 'ZENODO_API_URL', 'unknown'),
+        )
+        flash(f"Zenodo/fakenodo API not reachable at {zenodo_service.ZENODO_API_URL}", "danger")
+        return redirect(url_for("dataset.list_dataset"))
+
+    # If dataset was marked anonymous previously, make it non-anonymous now (user chose to publish)
+    if getattr(dataset.ds_meta_data, "anonymous", False):
+        # Persist the change in the DB
+        dataset_service.update_dsmetadata(dataset.ds_meta_data_id, anonymous=False)
+        # Re-load the ds_meta_data from DB to guarantee authors and current state are present
+        try:
+            refreshed = dataset_service.dsmetadata_repository.get_by_id(dataset.ds_meta_data_id)
+            if refreshed:
+                dataset.ds_meta_data = refreshed
+        except Exception:
+            # Fallback: try to set the flag in-memory if reload fails
+            try:
+                dataset.ds_meta_data.anonymous = False
+            except Exception:
+                pass
+
+    # Create deposition
+    try:
+        zenodo_response_json = zenodo_service.create_new_deposition(dataset)
+        data = zenodo_response_json
+    except Exception as exc:
+        logger.exception(f"Exception while creating deposition in Zenodo: {exc}")
+        flash(f"Failed to create deposition. Error details: {str(exc)}", "danger")
+        return redirect(url_for("dataset.list_dataset"))
+
+    # Accept deposition creation when either `conceptrecid` or `id` is present.
+    if data.get("conceptrecid") or data.get("id"):
+        deposition_id = data.get("id")
+        dataset_service.update_dsmetadata(dataset.ds_meta_data_id, deposition_id=deposition_id)
+        try:
+            for feature_model in dataset.feature_models:
+                zenodo_service.upload_file(dataset, deposition_id, feature_model)
+            zenodo_service.publish_deposition(deposition_id)
+            deposition_doi = zenodo_service.get_doi(deposition_id)
+            # Persist DOI in DB so dataset appears as synchronized
+            dataset_service.update_dsmetadata(dataset.ds_meta_data_id, dataset_doi=deposition_doi)
+            logger.info("Dataset %s published with DOI %s", dataset.id, deposition_doi)
+            flash(f"Dataset published successfully. DOI: {deposition_doi}", "success")
+        except Exception as exc:
+            logger.exception(f"Exception while uploading/publishing files: {exc}")
+            flash(f"Failed to upload or publish files: {str(exc)}", "danger")
+            return redirect(url_for("dataset.list_dataset"))
+
+    # If we didn't receive a conceptrecid or id, log the response for debugging.
+    logger.debug("Zenodo response during sync: %s", data)
+
+    return redirect(url_for("dataset.list_dataset"))

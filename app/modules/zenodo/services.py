@@ -11,6 +11,7 @@ from app.modules.featuremodel.models import FeatureModel
 from app.modules.zenodo.repositories import ZenodoRepository
 from core.configuration.configuration import uploads_folder_name
 from core.services.BaseService import BaseService
+from app.modules.dataset.repositories import DSMetaDataRepository
 
 logger = logging.getLogger(__name__)
 
@@ -20,22 +21,43 @@ load_dotenv()
 class ZenodoService(BaseService):
 
     def get_zenodo_url(self):
-        # Prefer local fakenodo if configured
+        # Decide which API URL to use for uploads. By default we force fakenodo for dataset uploads
+        # to avoid ever sending dataset uploads to the real Zenodo API from this app.
+        # Control via env var UPLOADS_USE_FAKENODO_ONLY (default: true). When enabled, prefer
+        # FAKENODO_URL (if set) or a sensible local default.
+        force_fakenodo = os.getenv("UPLOADS_USE_FAKENODO_ONLY", "true").lower() in ("1", "true", "yes")
         fakenodo_url = os.getenv("FAKENODO_URL")
+        default_fakenodo = "http://127.0.0.1:5055/api/deposit/depositions"
+
+        if force_fakenodo:
+            return fakenodo_url or default_fakenodo
+
+        # Backwards-compatible behaviour if forcing is disabled: keep previous logic
+        # Prefer local fakenodo if configured
         if fakenodo_url:
             return fakenodo_url
 
+        # If no explicit fakenodo URL provided, but no access token either, prefer a local fakenodo
+        # default. This avoids 403 Permission denied when running locally without Zenodo creds.
+        zenodo_token = os.getenv("ZENODO_ACCESS_TOKEN")
+
+        # If user provided explicit ZENODO_API_URL via env, respect it
+        explicit = os.getenv("ZENODO_API_URL")
+        if explicit:
+            return explicit
+
         FLASK_ENV = os.getenv("FLASK_ENV", "development")
-        ZENODO_API_URL = ""
+        if not zenodo_token:
+            # No token available: try using local fakenodo default
+            return default_fakenodo
 
+        # Otherwise, use Zenodo sandbox in development, or production endpoint
         if FLASK_ENV == "development":
-            ZENODO_API_URL = os.getenv("ZENODO_API_URL", "https://sandbox.zenodo.org/api/deposit/depositions")
+            return os.getenv("ZENODO_API_URL", "https://sandbox.zenodo.org/api/deposit/depositions")
         elif FLASK_ENV == "production":
-            ZENODO_API_URL = os.getenv("ZENODO_API_URL", "https://zenodo.org/api/deposit/depositions")
+            return os.getenv("ZENODO_API_URL", "https://zenodo.org/api/deposit/depositions")
         else:
-            ZENODO_API_URL = os.getenv("ZENODO_API_URL", "https://sandbox.zenodo.org/api/deposit/depositions")
-
-        return ZENODO_API_URL
+            return os.getenv("ZENODO_API_URL", "https://sandbox.zenodo.org/api/deposit/depositions")
 
     def get_zenodo_access_token(self):
         return os.getenv("ZENODO_ACCESS_TOKEN")
@@ -45,7 +67,14 @@ class ZenodoService(BaseService):
         self.ZENODO_ACCESS_TOKEN = self.get_zenodo_access_token()
         self.ZENODO_API_URL = self.get_zenodo_url()
         self.headers = {"Content-Type": "application/json"}
-        self.params = {"access_token": self.ZENODO_ACCESS_TOKEN}
+        # Only include access_token param if we have a token AND we're not using fakenodo.
+        # When using a local fakenodo we avoid sending access tokens.
+        fakenodo_candidates = [os.getenv("FAKENODO_URL"), "http://127.0.0.1:5055/api/deposit/depositions"]
+        using_fakenodo = any(self.ZENODO_API_URL and cand and cand in self.ZENODO_API_URL for cand in fakenodo_candidates)
+        if self.ZENODO_ACCESS_TOKEN and not using_fakenodo:
+            self.params = {"access_token": self.ZENODO_ACCESS_TOKEN}
+        else:
+            self.params = {}
 
     def test_connection(self) -> bool:
         """
@@ -159,20 +188,37 @@ class ZenodoService(BaseService):
                 else None
             ),
             "description": dataset.ds_meta_data.description,
-            "creators": [
-                {
-                    "name": author.name,
-                    **({"affiliation": author.affiliation} if author.affiliation else {}),
-                    **({"orcid": author.orcid} if author.orcid else {}),
-                }
-                for author in dataset.ds_meta_data.authors
-            ],
+            # If the dataset metadata marks the dataset as anonymous, avoid exposing real authors here
+            # Build creators list. If anonymous -> send Anonymous. Otherwise try to obtain authors
+            # from the provided dataset; if they are not loaded for some reason, fetch them
+            # from the DSMetaData repository as a fallback.
+            "creators": (lambda: (
+                [{"name": "Anonymous"}]
+                if getattr(dataset.ds_meta_data, "anonymous", False)
+                else [
+                    {
+                        "name": author.name,
+                        **({"affiliation": author.affiliation} if author.affiliation else {}),
+                        **({"orcid": author.orcid} if author.orcid else {}),
+                    }
+                    for author in (
+                        getattr(dataset.ds_meta_data, "authors", None)
+                        or DSMetaDataRepository().get_by_id(dataset.ds_meta_data_id).authors
+                    )
+                ]
+            ))(),
             "keywords": (
                 ["uvlhub"] if not dataset.ds_meta_data.tags else dataset.ds_meta_data.tags.split(", ") + ["uvlhub"]
             ),
             "access_right": "open",
             "license": "CC-BY-4.0",
         }
+
+        # Log creators payload for debugging (helps ensure we are not sending 'Anonymous')
+        try:
+            logger.debug("Zenodo metadata creators payload: %s", metadata.get("creators"))
+        except Exception:
+            pass
 
         data = {"metadata": metadata}
 

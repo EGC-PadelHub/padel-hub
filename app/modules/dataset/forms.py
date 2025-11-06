@@ -1,5 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import FieldList, FormField, SelectField, StringField, SubmitField, TextAreaField
+from wtforms import RadioField
 from wtforms.validators import URL, DataRequired, Optional
 
 from app.modules.dataset.models import PublicationType
@@ -68,6 +69,11 @@ class DataSetForm(FlaskForm):
     tags = StringField("Tags (separated by commas)")
     authors = FieldList(FormField(AuthorForm))
     feature_models = FieldList(FormField(FeatureModelForm), min_entries=1)
+    upload_type = RadioField(
+        "Upload type",
+        choices=[("public", "Permanent upload to Zenodo"), ("anonymous", "Permanent (anonymous) upload to Zenodo"), ("draft", "Draft")],
+        default="public",
+    )
 
     submit = SubmitField("Submit")
 
@@ -82,6 +88,8 @@ class DataSetForm(FlaskForm):
             "publication_doi": self.publication_doi.data,
             "dataset_doi": self.dataset_doi.data,
             "tags": self.tags.data,
+            # store whether this dataset should be uploaded anonymized
+            "anonymous": True if getattr(self, 'upload_type', None) and self.upload_type.data == 'anonymous' else False,
         }
 
     def convert_publication_type(self, value):

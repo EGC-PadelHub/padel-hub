@@ -148,10 +148,29 @@ var currentId = 0;
                         const form = document.getElementById(formId);
                         const inputs = form.querySelectorAll('input, select, textarea');
                         inputs.forEach(input => {
-                            if (input.name) {
-                                formData[input.name] = formData[input.name] || [];
-                                formData[input.name].push(input.value);
+                            if (!input.name) return;
+
+                            // Radios: only include the checked one
+                            if (input.type === 'radio') {
+                                if (input.checked) {
+                                    formData[input.name] = formData[input.name] || [];
+                                    formData[input.name].push(input.value);
+                                }
+                                return;
                             }
+
+                            // Checkboxes: include only if checked (common expectation)
+                            if (input.type === 'checkbox') {
+                                if (input.checked) {
+                                    formData[input.name] = formData[input.name] || [];
+                                    formData[input.name].push(input.value || 'on');
+                                }
+                                return;
+                            }
+
+                            // Normal inputs/selects/textareas
+                            formData[input.name] = formData[input.name] || [];
+                            formData[input.name].push(input.value);
                         });
                     });
 

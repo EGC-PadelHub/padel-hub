@@ -18,7 +18,7 @@ function send_query() {
 
             const searchCriteria = {
                 csrf_token: csrfToken,
-                query: document.querySelector('#query').value,
+                query: document.querySelector('#filter_title').value,
                 publication_type: document.querySelector('#publication_type').value,
                 sorting: document.querySelector('[name="sorting"]:checked').value,
             };
@@ -192,17 +192,16 @@ document.addEventListener('DOMContentLoaded', () => {
     //queryInput.dispatchEvent(new Event('input', {bubbles: true}));
 
     let urlParams = new URLSearchParams(window.location.search);
-    let queryParam = urlParams.get('query');
-
+    let queryParam = urlParams.get('filter_title');
     if (queryParam && queryParam.trim() !== '') {
 
-        const queryInput = document.getElementById('query');
+        const queryInput = document.getElementById('filter_title');
         queryInput.value = queryParam
         queryInput.dispatchEvent(new Event('input', {bubbles: true}));
         console.log("throw event");
 
     } else {
-        const queryInput = document.getElementById('query');
+        const queryInput = document.getElementById('filter_title');
         queryInput.dispatchEvent(new Event('input', {bubbles: true}));
     }
 });

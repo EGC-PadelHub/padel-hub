@@ -1,0 +1,50 @@
+{% extends "base_template.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2>My Metric Dashboard</h2>
+    
+    <!-- First row: 3 cards -->
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">Uploaded Datasets</h5>
+                    <p class="card-text display-4">{{ uploaded_datasets }}</p>
+                    <small class="text-muted">Datasets you created</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">Downloads of My Datasets</h5>
+                    <p class="card-text display-4">{{ downloads_of_my_datasets }}</p>
+                    <small class="text-muted">Times your datasets were downloaded</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">Downloads I Made</h5>
+                    <p class="card-text display-4">{{ downloads_i_made }}</p>
+                    <small class="text-muted">Datasets you downloaded</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Second row: 1 card (Synchronizations only) -->
+    <div class="row mt-4">
+        <div class="col-md-6 offset-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">Synchronizations</h5>
+                    <p class="card-text display-4">{{ synchronizations }}</p>
+                    <small class="text-muted">Datasets with DOI</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

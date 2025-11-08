@@ -253,39 +253,29 @@ def download_dataset(dataset_id):
     user_cookie = request.cookies.get("download_cookie")
     if not user_cookie:
         user_cookie = str(uuid.uuid4())  # Generate a new unique identifier if it does not exist
-        # Save the cookie to the user's browser
-        resp = make_response(
-            send_from_directory(
-                temp_dir,
-                f"{base_name}.zip",
-                as_attachment=True,
-                mimetype="application/zip",
-            )
-        )
-        resp.set_cookie("download_cookie", user_cookie)
-    else:
-        resp = send_from_directory(
+
+    # Record the download in the database (always, for each download action)
+    logger.info(f"Recording download for dataset_id={dataset_id}, user_id={current_user.id if current_user.is_authenticated else None}, cookie={user_cookie}")
+    download_record = DSDownloadRecordService().create(
+        user_id=current_user.id if current_user.is_authenticated else None,
+        dataset_id=dataset_id,
+        download_date=datetime.now(timezone.utc),
+        download_cookie=user_cookie,
+    )
+    logger.info(f"Download record created: {download_record}")
+
+    # Send the file
+    resp = make_response(
+        send_from_directory(
             temp_dir,
             f"{base_name}.zip",
             as_attachment=True,
             mimetype="application/zip",
         )
-
-    # Check if the download record already exists for this cookie
-    existing_record = DSDownloadRecord.query.filter_by(
-        user_id=current_user.id if current_user.is_authenticated else None,
-        dataset_id=dataset_id,
-        download_cookie=user_cookie,
-    ).first()
-
-    if not existing_record:
-        # Record the download in your database
-        DSDownloadRecordService().create(
-            user_id=current_user.id if current_user.is_authenticated else None,
-            dataset_id=dataset_id,
-            download_date=datetime.now(timezone.utc),
-            download_cookie=user_cookie,
-        )
+    )
+    
+    # Save/update the cookie in the user's browser
+    resp.set_cookie("download_cookie", user_cookie)
 
     return resp
 
@@ -560,30 +550,26 @@ def export_dataset(dataset_id: int):
     user_cookie = request.cookies.get("download_cookie")
     if not user_cookie:
         user_cookie = str(uuid.uuid4())
-        resp = make_response(
-            send_from_directory(
-                temp_dir, f"{base_name}_different-formats.zip", as_attachment=True, mimetype="application/zip"
-            )
-        )
-        resp.set_cookie("download_cookie", user_cookie)
-    else:
-        resp = send_from_directory(
-            temp_dir, f"{base_name}_different-formats.zip", as_attachment=True, mimetype="application/zip"
-        )
 
-    existing_record = DSDownloadRecord.query.filter_by(
+    # Record the download in the database (always, for each download action)
+    logger.info(f"Recording export download for dataset_id={dataset_id}, user_id={current_user.id if current_user.is_authenticated else None}, cookie={user_cookie}")
+    download_record = DSDownloadRecordService().create(
         user_id=current_user.id if current_user.is_authenticated else None,
         dataset_id=dataset_id,
+        download_date=datetime.now(timezone.utc),
         download_cookie=user_cookie,
-    ).first()
+    )
+    logger.info(f"Export download record created: {download_record}")
 
-    if not existing_record:
-        DSDownloadRecordService().create(
-            user_id=current_user.id if current_user.is_authenticated else None,
-            dataset_id=dataset_id,
-            download_date=datetime.now(timezone.utc),
-            download_cookie=user_cookie,
+    # Send the file
+    resp = make_response(
+        send_from_directory(
+            temp_dir, f"{base_name}_different-formats.zip", as_attachment=True, mimetype="application/zip"
         )
+    )
+    
+    # Save/update the cookie in the user's browser
+    resp.set_cookie("download_cookie", user_cookie)
 
     return resp
 

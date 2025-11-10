@@ -1,50 +1,273 @@
 {% extends "base_template.html" %}
+
 {% block content %}
-<div class="container mt-4">
-    <h2>My Metric Dashboard</h2>
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="mb-1"><i data-feather="bar-chart-2"></i> My Metrics Dashboard</h2>
+            <p class="text-muted">Overview of your activity and contributions</p>
+        </div>
+    </div>
     
-    <!-- First row: 3 cards -->
-    <div class="row mt-4">
-        <div class="col-md-4">
-            <div class="card text-center">
+    <!-- Metrics Cards Row -->
+    <div class="row g-3 mb-4">
+        <!-- Uploaded Datasets Card -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100 metric-card" style="border-left: 4px solid #4e73df !important;">
                 <div class="card-body">
-                    <h5 class="card-title">Uploaded Datasets</h5>
-                    <p class="card-text display-4">{{ uploaded_datasets }}</p>
-                    <small class="text-muted">Datasets you created</small>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2 text-uppercase" style="font-size: 0.75rem; font-weight: 700;">Uploaded Datasets</h6>
+                            <h2 class="mb-0 font-weight-bold text-primary">{{ uploaded_datasets }}</h2>
+                        </div>
+                        <div class="text-primary" style="opacity: 0.3;">
+                            <i data-feather="database" style="width: 40px; height: 40px;"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted mt-2 d-block">Datasets you created</small>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card text-center">
+
+        <!-- Downloads of My Datasets Card -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100 metric-card" style="border-left: 4px solid #1cc88a !important;">
                 <div class="card-body">
-                    <h5 class="card-title">Downloads of My Datasets</h5>
-                    <p class="card-text display-4">{{ downloads_of_my_datasets }}</p>
-                    <small class="text-muted">Times your datasets were downloaded</small>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2 text-uppercase" style="font-size: 0.75rem; font-weight: 700;">Downloads Received</h6>
+                            <h2 class="mb-0 font-weight-bold text-success">{{ downloads_of_my_datasets }}</h2>
+                        </div>
+                        <div class="text-success" style="opacity: 0.3;">
+                            <i data-feather="download" style="width: 40px; height: 40px;"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted mt-2 d-block">Times your datasets were downloaded</small>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card text-center">
+
+        <!-- Downloads I Made Card -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100 metric-card" style="border-left: 4px solid #36b9cc !important;">
                 <div class="card-body">
-                    <h5 class="card-title">Downloads I Made</h5>
-                    <p class="card-text display-4">{{ downloads_i_made }}</p>
-                    <small class="text-muted">Datasets you downloaded</small>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2 text-uppercase" style="font-size: 0.75rem; font-weight: 700;">Downloads Made</h6>
+                            <h2 class="mb-0 font-weight-bold text-info">{{ downloads_i_made }}</h2>
+                        </div>
+                        <div class="text-info" style="opacity: 0.3;">
+                            <i data-feather="download-cloud" style="width: 40px; height: 40px;"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted mt-2 d-block">Datasets you downloaded</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Synchronizations Card -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100 metric-card" style="border-left: 4px solid #f6c23e !important;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2 text-uppercase" style="font-size: 0.75rem; font-weight: 700;">Synchronized</h6>
+                            <h2 class="mb-0 font-weight-bold text-warning">{{ synchronizations }}</h2>
+                        </div>
+                        <div class="text-warning" style="opacity: 0.3;">
+                            <i data-feather="check-circle" style="width: 40px; height: 40px;"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted mt-2 d-block">Datasets with DOI</small>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Second row: 1 card (Synchronizations only) -->
-    <div class="row mt-4">
-        <div class="col-md-6 offset-md-3">
-            <div class="card text-center">
+    <!-- Charts Row -->
+    <div class="row g-3">
+        <!-- Downloads Chart -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0"><i data-feather="trending-up" class="mr-2"></i>Downloads Overview</h5>
+                </div>
                 <div class="card-body">
-                    <h5 class="card-title">Synchronizations</h5>
-                    <p class="card-text display-4">{{ synchronizations }}</p>
-                    <small class="text-muted">Datasets with DOI</small>
+                    <div style="position: relative; height: 300px;">
+                        <canvas id="downloadsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Datasets Status Chart -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0"><i data-feather="pie-chart" class="mr-2"></i>Datasets Status</h5>
+                </div>
+                <div class="card-body">
+                    <div style="position: relative; height: 300px;">
+                        <canvas id="datasetsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Summary -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0"><i data-feather="activity" class="mr-2"></i>Activity Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3 mb-3 mb-md-0">
+                            <div class="p-3">
+                                <i data-feather="eye" class="text-primary mb-2" style="width: 30px; height: 30px;"></i>
+                                <h3 class="mb-1">{{ views }}</h3>
+                                <p class="text-muted mb-0 small">Total Views</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3 mb-md-0">
+                            <div class="p-3">
+                                <i data-feather="trending-up" class="text-success mb-2" style="width: 30px; height: 30px;"></i>
+                                <h3 class="mb-1">{{ (downloads_of_my_datasets / uploaded_datasets)|round(1) if uploaded_datasets > 0 else 0 }}</h3>
+                                <p class="text-muted mb-0 small">Avg Downloads/Dataset</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3 mb-md-0">
+                            <div class="p-3">
+                                <i data-feather="percent" class="text-warning mb-2" style="width: 30px; height: 30px;"></i>
+                                <h3 class="mb-1">{{ ((synchronizations / uploaded_datasets * 100)|round(0)|int) if uploaded_datasets > 0 else 0 }}%</h3>
+                                <p class="text-muted mb-0 small">Sync Rate</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3">
+                                <i data-feather="users" class="text-info mb-2" style="width: 30px; height: 30px;"></i>
+                                <h3 class="mb-1">{{ (views / uploaded_datasets)|round(1) if uploaded_datasets > 0 else 0 }}</h3>
+                                <p class="text-muted mb-0 small">Avg Views/Dataset</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    .metric-card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+    
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    .card-header {
+        font-weight: 600;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+    // @ts-nocheck
+    document.addEventListener('DOMContentLoaded', function() {
+        // Downloads Chart (Bar Chart)
+        const downloadsCtx = document.getElementById('downloadsChart').getContext('2d');
+        new Chart(downloadsCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Downloads Received', 'Downloads Made', 'Total Views'],
+                datasets: [{
+                    label: 'Activity Count',
+                    data: [{{ downloads_of_my_datasets }}, {{ downloads_i_made }}, {{ views }}],
+                    backgroundColor: [
+                        'rgba(28, 200, 138, 0.8)',
+                        'rgba(54, 185, 204, 0.8)',
+                        'rgba(78, 115, 223, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgb(28, 200, 138)',
+                        'rgb(54, 185, 204)',
+                        'rgb(78, 115, 223)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 0 
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+
+        // Datasets Status Chart (Doughnut Chart)
+        const datasetsCtx = document.getElementById('datasetsChart').getContext('2d');
+        const synchronized = {{ synchronizations }};
+        const notSynchronized = {{ uploaded_datasets }} - synchronized;
+        
+        new Chart(datasetsCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Synchronized (with DOI)', 'Not Synchronized'],
+                datasets: [{
+                    data: [synchronized, notSynchronized],
+                    backgroundColor: [
+                        'rgba(246, 194, 62, 0.8)',
+                        'rgba(231, 74, 59, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgb(246, 194, 62)',
+                        'rgb(231, 74, 59)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 0  // Disable animation to prevent scroll issues
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 15,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Initialize Feather icons
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+    });
+</script>
 {% endblock %}

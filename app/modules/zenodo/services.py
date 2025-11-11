@@ -208,7 +208,7 @@ class ZenodoService(BaseService):
                 ]
             ))(),
             "keywords": (
-                ["uvlhub"] if not dataset.ds_meta_data.tags else dataset.ds_meta_data.tags.split(", ") + ["uvlhub"]
+                ["padelhub"] if not dataset.ds_meta_data.tags else dataset.ds_meta_data.tags.split(", ") + ["padelhub"]
             ),
             "access_right": "open",
             "license": "CC-BY-4.0",

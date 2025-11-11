@@ -3,6 +3,19 @@ document.addEventListener('DOMContentLoaded', () => {
     send_query();
 });
 
+document.addEventListener("DOMContentLoaded", function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    if (urlParams.has('query')) {
+        const searchQuery = urlParams.get('query');
+        const titleFilterInput = document.getElementById('filter_title');
+        
+        if (titleFilterInput) {
+            titleFilterInput.value = searchQuery;
+            titleFilterInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    }
+});
 function send_query() {
 
     console.log("send query listener attached...")
@@ -11,16 +24,11 @@ function send_query() {
 
     filters.forEach(filter => {
         filter.addEventListener('input', () => {
-            
-            // --- INICIO DE LA CORRECCIÓN ---
 
-            // 1. Mover el token FUERA del criteria
             const csrfToken = document.getElementById('csrf_token').value;
-
-            // 2. Añadir 'author' y mantener 'query' (como tenías)
             const searchCriteria = {
                 query: document.querySelector('#filter_title').value,
-                author: document.querySelector('#filter_author').value, // <-- AÑADIDO
+                author: document.querySelector('#filter_author').value, 
                 publication_type: document.querySelector('#publication_type').value,
                 sorting: document.querySelector('[name="sorting"]:checked').value,
             };
@@ -31,26 +39,21 @@ function send_query() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken // 3. Mover el token a los HEADERS
+                    'X-CSRFToken': csrfToken 
                 },
-                body: JSON.stringify(searchCriteria), // El body ya no lleva el token
+                body: JSON.stringify(searchCriteria), 
             })
-            // --- FIN DE LA CORRECCIÓN ---
+            
                 .then(response => {
                     if (!response.ok) {
-                        // Si el token estaba mal, esto se activa
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
                     return response.json();
                 })
                 .then(data => {
-                    // ... (tu lógica de pintar el HTML está PERFECTA) ...
-                    // ... (la dejo sin cambios) ...
-
                     console.log(data);
                     document.getElementById('results').innerHTML = '';
 
-                    // results counter
                     const resultCount = data.length;
                     const resultText = resultCount === 1 ? 'dataset' : 'datasets';
                     document.getElementById('results_number').textContent = `${resultCount} ${resultText} found`;
@@ -146,7 +149,6 @@ function send_query() {
                     });
                 })
                 .catch(error => {
-                    // El error 500 del CSRF te llevaría aquí
                     console.error('Error fetching search results:', error);
                     document.getElementById("results_not_found").style.display = "block";
                     document.getElementById('results_number').textContent = `0 results found`;
@@ -162,8 +164,7 @@ function formatDate(dateString) {
 }
 
 function set_tag_as_query(tagName) {
-    // --- CORRECCIÓN 3 (Bug de ID) ---
-    const queryInput = document.getElementById('filter_title'); // Apuntar al ID correcto
+    const queryInput = document.getElementById('filter_title'); 
     queryInput.value = tagName.trim();
     queryInput.dispatchEvent(new Event('input', {bubbles: true}));
 }
@@ -183,33 +184,25 @@ document.getElementById('clear-filters').addEventListener('click', clearFilters)
 
 function clearFilters() {
 
-    // --- CORRECCIÓN 4 (Limpieza) ---
-
-    // 1. Resetear el título
-    let queryInput = document.querySelector('#filter_title'); // Apuntar al ID correcto
+    let queryInput = document.querySelector('#filter_title'); 
     queryInput.value = "";
 
-    // 2. AÑADIDO: Resetear el autor
     let authorInput = document.querySelector('#filter_author');
     authorInput.value = "";
 
-    // 3. Resetear el tipo de publicación
     let publicationTypeSelect = document.querySelector('#publication_type');
     publicationTypeSelect.value = "any";
 
-    // 4. Resetear el orden
     let sortingOptions = document.querySelectorAll('[name="sorting"]');
     sortingOptions.forEach(option => {
         option.checked = option.value == "newest";
     });
 
-    // 5. Lanzar la búsqueda (solo necesitamos disparar un evento)
     queryInput.dispatchEvent(new Event('input', {bubbles: true}));
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Esta parte está bien, es la que lanza la primera consulta
-    // cuando se carga la página (o si vienes de una URL con params)
+
     let urlParams = new URLSearchParams(window.location.search);
     let queryParam = urlParams.get('filter_title');
     if (queryParam && queryParam.trim() !== '') {

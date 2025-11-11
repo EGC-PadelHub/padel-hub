@@ -18,7 +18,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-muted mb-2 text-uppercase" style="font-size: 0.75rem; font-weight: 700;">Uploaded Datasets</h6>
-                            <h2 class="mb-0 font-weight-bold text-primary">{{ uploaded_datasets }}</h2>
+                            <h2 class="mb-0 font-weight-bold text-primary">{{ uploaded_datasets|default(0)|int }}</h2>
                         </div>
                         <div class="text-primary" style="opacity: 0.3;">
                             <i data-feather="database" style="width: 40px; height: 40px;"></i>
@@ -36,7 +36,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-muted mb-2 text-uppercase" style="font-size: 0.75rem; font-weight: 700;">Downloads Received</h6>
-                            <h2 class="mb-0 font-weight-bold text-success">{{ downloads_of_my_datasets }}</h2>
+                            <h2 class="mb-0 font-weight-bold text-success">{{ downloads_of_my_datasets|default(0)|int }}</h2>
                         </div>
                         <div class="text-success" style="opacity: 0.3;">
                             <i data-feather="download" style="width: 40px; height: 40px;"></i>
@@ -54,7 +54,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-muted mb-2 text-uppercase" style="font-size: 0.75rem; font-weight: 700;">Downloads Made</h6>
-                            <h2 class="mb-0 font-weight-bold text-info">{{ downloads_i_made }}</h2>
+                            <h2 class="mb-0 font-weight-bold text-info">{{ downloads_i_made|default(0)|int }}</h2>
                         </div>
                         <div class="text-info" style="opacity: 0.3;">
                             <i data-feather="download-cloud" style="width: 40px; height: 40px;"></i>
@@ -72,7 +72,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-muted mb-2 text-uppercase" style="font-size: 0.75rem; font-weight: 700;">Synchronized</h6>
-                            <h2 class="mb-0 font-weight-bold text-warning">{{ synchronizations }}</h2>
+                            <h2 class="mb-0 font-weight-bold text-warning">{{ synchronizations|default(0)|int }}</h2>
                         </div>
                         <div class="text-warning" style="opacity: 0.3;">
                             <i data-feather="check-circle" style="width: 40px; height: 40px;"></i>
@@ -90,7 +90,7 @@
         <div class="col-lg-6">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-header bg-white border-0 py-3">
-                    <h5 class="mb-0"><i data-feather="trending-up" class="mr-2"></i>Downloads Overview</h5>
+                    <h5 class="mb-0"><i data-feather="trending-up" class="mr-2"></i>Activity Received Overview</h5>
                 </div>
                 <div class="card-body">
                     <div style="position: relative; height: 300px;">
@@ -124,31 +124,24 @@
                 </div>
                 <div class="card-body">
                     <div class="row text-center">
-                        <div class="col-md-3 mb-3 mb-md-0">
-                            <div class="p-3">
-                                <i data-feather="eye" class="text-primary mb-2" style="width: 30px; height: 30px;"></i>
-                                <h3 class="mb-1">{{ views }}</h3>
-                                <p class="text-muted mb-0 small">Total Views</p>
-                            </div>
-                        </div>
-                        <div class="col-md-3 mb-3 mb-md-0">
+                        <div class="col-md-4 mb-3 mb-md-0">
                             <div class="p-3">
                                 <i data-feather="trending-up" class="text-success mb-2" style="width: 30px; height: 30px;"></i>
-                                <h3 class="mb-1">{{ (downloads_of_my_datasets / uploaded_datasets)|round(1) if uploaded_datasets > 0 else 0 }}</h3>
+                                <h3 class="mb-1">{{ ((downloads_of_my_datasets|default(0)|int) / (uploaded_datasets|default(0)|int))|round(1) if (uploaded_datasets|default(0)|int) > 0 else 0 }}</h3>
                                 <p class="text-muted mb-0 small">Avg Downloads/Dataset</p>
                             </div>
                         </div>
-                        <div class="col-md-3 mb-3 mb-md-0">
+                        <div class="col-md-4 mb-3 mb-md-0">
                             <div class="p-3">
                                 <i data-feather="percent" class="text-warning mb-2" style="width: 30px; height: 30px;"></i>
-                                <h3 class="mb-1">{{ ((synchronizations / uploaded_datasets * 100)|round(0)|int) if uploaded_datasets > 0 else 0 }}%</h3>
+                                <h3 class="mb-1">{{ (((synchronizations|default(0)|int) / (uploaded_datasets|default(0)|int) * 100)|round(0)|int) if (uploaded_datasets|default(0)|int) > 0 else 0 }}%</h3>
                                 <p class="text-muted mb-0 small">Sync Rate</p>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <div class="p-3">
                                 <i data-feather="users" class="text-info mb-2" style="width: 30px; height: 30px;"></i>
-                                <h3 class="mb-1">{{ (views / uploaded_datasets)|round(1) if uploaded_datasets > 0 else 0 }}</h3>
+                                <h3 class="mb-1">{{ ((views|default(0)|int) / (uploaded_datasets|default(0)|int))|round(1) if (uploaded_datasets|default(0)|int) > 0 else 0 }}</h3>
                                 <p class="text-muted mb-0 small">Avg Views/Dataset</p>
                             </div>
                         </div>
@@ -180,25 +173,37 @@
     document.addEventListener('DOMContentLoaded', function() {
         // Downloads Chart (Bar Chart)
         const downloadsCtx = document.getElementById('downloadsChart').getContext('2d');
+        // Data now represents actions received on the user's datasets (excluding Synchronizations)
+        const receivedData = [{{ downloads_of_my_datasets|default(0)|int }}, {{ views|default(0)|int }}];
+        console.log('Activity received chart data:', receivedData);
+        const labels = ['Downloads Received', 'Views Received'];
+        const bgColors = [
+            'rgba(28, 200, 138, 0.8)',
+            'rgba(78, 115, 223, 0.8)'
+        ];
+        const borderColors = [
+            'rgb(28, 200, 138)',
+            'rgb(78, 115, 223)'
+        ];
+
+        // Build one dataset per label so legend shows a colored item for each bar
+        // Adjust `barThickness` to change width (pixels). Tweak this value as needed.
+        const BAR_THICKNESS_PX = 40;
+        const datasets = labels.map((lbl, idx) => ({
+            label: lbl,
+            data: labels.map((_, i) => (i === idx ? receivedData[idx] : 0)),
+            backgroundColor: bgColors[idx],
+            borderColor: borderColors[idx],
+            borderWidth: 2,
+            barThickness: BAR_THICKNESS_PX,
+            maxBarThickness: BAR_THICKNESS_PX * 2
+        }));
+
         new Chart(downloadsCtx, {
             type: 'bar',
             data: {
-                labels: ['Downloads Received', 'Downloads Made', 'Total Views'],
-                datasets: [{
-                    label: 'Activity Count',
-                    data: [{{ downloads_of_my_datasets }}, {{ downloads_i_made }}, {{ views }}],
-                    backgroundColor: [
-                        'rgba(28, 200, 138, 0.8)',
-                        'rgba(54, 185, 204, 0.8)',
-                        'rgba(78, 115, 223, 0.8)'
-                    ],
-                    borderColor: [
-                        'rgb(28, 200, 138)',
-                        'rgb(54, 185, 204)',
-                        'rgb(78, 115, 223)'
-                    ],
-                    borderWidth: 2
-                }]
+                labels: labels,
+                datasets: datasets
             },
             options: {
                 responsive: true,
@@ -208,14 +213,24 @@
                 },
                 plugins: {
                     legend: {
-                        display: false
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            boxWidth: 12,
+                            padding: 12,
+                            font: { size: 12 }
+                        }
                     }
                 },
                 scales: {
                     y: {
                         beginAtZero: true,
+                        min: 0,
+                        suggestedMin: 0,
                         ticks: {
-                            precision: 0
+                            precision: 0,
+                            stepSize: 1
                         }
                     }
                 }
@@ -224,8 +239,8 @@
 
         // Datasets Status Chart (Doughnut Chart)
         const datasetsCtx = document.getElementById('datasetsChart').getContext('2d');
-        const synchronized = {{ synchronizations }};
-        const notSynchronized = {{ uploaded_datasets }} - synchronized;
+    const synchronized = {{ synchronizations|default(0)|int }};
+    const notSynchronized = {{ uploaded_datasets|default(0)|int }} - synchronized;
         
         new Chart(datasetsCtx, {
             type: 'doughnut',

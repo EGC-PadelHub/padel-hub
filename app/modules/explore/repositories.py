@@ -13,25 +13,24 @@ class ExploreRepository(BaseRepository):
         super().__init__(DataSet)
 
     def filter(self, title="", sorting="newest", publication_type="any", tags=[], **kwargs):
-        base_query =(
-            self.model.query.join(DataSet.ds_meta_data)
-            .join(DSMetaData.authors)
-            .join(DataSet.feature_models, isouter=True)
-            .join(FeatureModel.fm_meta_data, isouter=True)
-            .filter(DSMetaData.dataset_doi.isnot(None))  
+        datasets = (
+            self.model.query .join(DSMetaData, DataSet.ds_meta_data)
+            .join(Author,DSMetaData.authors, isouter=True)
+            .join(FeatureModel, DataSet.feature_models, isouter=True)
+            .join(FMMetaData, FeatureModel.fm_meta_data, isouter=True)
+            .filter(DSMetaData.dataset_doi.isnot(None))
         )
 
-        base_query = self._apply_title_filter(base_query, title)
-        # base_query = self._apply_author_filter(base_query, kwargs.get("author", ""))
-        # base_query = self._apply_description_filter(base_query, kwargs.get("description", ""))
-        # base_query = self._apply_tags_filter(base_query, tags)
-        # base_query = self._apply_publication_type_filter(base_query, publication_type)
-        # base_query = self._apply_sorting(base_query, sorting)
+        datasets = self._apply_title_filter(datasets, title)
+        datasets = self._apply_author_filter(datasets, kwargs.get("author", ""))
+        # datasets = self._apply_description_filter(datasets, kwargs.get("description", ""))
+        # datasets = self._apply_tags_filter(datasets, tags)
+        # datasets = self._apply_publication_type_filter(datasets, publication_type)
+        # datasets = self._apply_sorting(datasets, sorting)
 
-        return base_query.all()
+        return datasets.distinct().all()
 
-
-    def _apply_title_filter(self, query, title: str):
+    def _apply_title_filter(self, query, title=""):
         if not title:
             return query
         
@@ -40,20 +39,39 @@ class ExploreRepository(BaseRepository):
         title_filters = []
         for word in cleaned_query.split():
             title_filters.append(DSMetaData.title.ilike(f"%{word}%"))
+        
         if not title_filters:
             return query
+            
         return query.filter(and_(*title_filters))
+    
     
     def _apply_author_filter(self, query, author: str):
         if not author:
             return query
-
-        search_term = f"%{unidecode.unidecode(author).lower()}%"
-        return query.filter(or_(
-            Author.name.ilike(search_term),
-            Author.affiliation.ilike(search_term),
-            Author.orcid.ilike(search_term)
-        ))
+        
+        # 1. Normalizamos y limpiamos la búsqueda, IGUAL QUE EL TÍTULO
+        normalized_query = unidecode.unidecode(author).lower()
+        cleaned_query = re.sub(r'[,.":\'()\[\]^;!¡¿?]', "", normalized_query)
+        
+        author_filters = []
+        for word in cleaned_query.split():
+            search_term = f"%{word}%"
+            
+            # 2. Creamos un OR para cada palabra (buscar en name O affiliation O orcid)
+            word_filter = or_(
+                Author.name.ilike(search_term),
+                Author.affiliation.ilike(search_term),
+                Author.orcid.ilike(search_term)
+            )
+            author_filters.append(word_filter)
+        
+        if not author_filters:
+            return query
+            
+        # 3. Aplicamos un AND para todas las palabras
+        # (Ej: si buscas "Javi Palla", busca "Javi" Y "Palla")
+        return query.filter(and_(*author_filters))
     
     def _apply_description_filter(self, query, description: str):
         if not description:
@@ -64,10 +82,12 @@ class ExploreRepository(BaseRepository):
         description_filters = []
         for word in cleaned_query.split():
             description_filters.append(DSMetaData.description.ilike(f"%{word}%"))
+        
         if not description_filters:
             return query
+            
         return query.filter(or_(*description_filters))
-
+    
     def _apply_tags_filter(self, query, tags: list):
         if not tags:
             return query

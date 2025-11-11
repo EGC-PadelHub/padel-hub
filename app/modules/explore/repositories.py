@@ -50,7 +50,6 @@ class ExploreRepository(BaseRepository):
         if not author:
             return query
         
-        # 1. Normalizamos y limpiamos la búsqueda, IGUAL QUE EL TÍTULO
         normalized_query = unidecode.unidecode(author).lower()
         cleaned_query = re.sub(r'[,.":\'()\[\]^;!¡¿?]', "", normalized_query)
         
@@ -58,19 +57,14 @@ class ExploreRepository(BaseRepository):
         for word in cleaned_query.split():
             search_term = f"%{word}%"
             
-            # 2. Creamos un OR para cada palabra (buscar en name O affiliation O orcid)
             word_filter = or_(
-                Author.name.ilike(search_term),
-                Author.affiliation.ilike(search_term),
-                Author.orcid.ilike(search_term)
+                Author.name.ilike(search_term)
             )
             author_filters.append(word_filter)
         
         if not author_filters:
             return query
             
-        # 3. Aplicamos un AND para todas las palabras
-        # (Ej: si buscas "Javi Palla", busca "Javi" Y "Palla")
         return query.filter(and_(*author_filters))
     
     def _apply_description_filter(self, query, description: str):

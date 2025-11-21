@@ -1,0 +1,267 @@
+{% extends "base_template.html" %}
+
+{% block title %}CSV Structure Requirements{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">
+                <i data-feather="file-text"></i>
+                CSV Structure Requirements for Padel Match Datasets
+            </h1>
+
+            <!-- Introduction -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Overview</h5>
+                    <p class="card-text">
+                        All CSV files uploaded to PadelHub must follow a specific structure designed for padel match data.
+                        Each row in the CSV represents a single match with information about the tournament, players, and results.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Required Columns -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Required Columns</h5>
+                </div>
+                <div class="card-body">
+                    <p>The following 21 columns are <strong>mandatory</strong> and must appear in this exact order:</p>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Column Name</th>
+                                    <th>Description</th>
+                                    <th>Data Type</th>
+                                    <th>Example</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1</td>
+                                    <td><code>nombre_torneo</code></td>
+                                    <td>Tournament name</td>
+                                    <td>Text</td>
+                                    <td>Madrid Premier Padel P1 2024</td>
+                                </tr>
+                                <tr>
+                                    <td>2</td>
+                                    <td><code>anio_torneo</code></td>
+                                    <td>Tournament year</td>
+                                    <td>Integer (YYYY)</td>
+                                    <td>2024</td>
+                                </tr>
+                                <tr>
+                                    <td>3</td>
+                                    <td><code>fecha_inicio_torneo</code></td>
+                                    <td>Tournament start date</td>
+                                    <td>Date (DD.MM.YYYY)</td>
+                                    <td>02.09.2024</td>
+                                </tr>
+                                <tr>
+                                    <td>4</td>
+                                    <td><code>fecha_final_torneo</code></td>
+                                    <td>Tournament end date</td>
+                                    <td>Date (DD.MM.YYYY)</td>
+                                    <td>08.09.2024</td>
+                                </tr>
+                                <tr>
+                                    <td>5</td>
+                                    <td><code>pista_principal</code></td>
+                                    <td>Main court/venue</td>
+                                    <td>Text</td>
+                                    <td>Wizink Center</td>
+                                </tr>
+                                <tr>
+                                    <td>6</td>
+                                    <td><code>categoria</code></td>
+                                    <td>Category</td>
+                                    <td>Text (Masculino/Femenino/Mixed)</td>
+                                    <td>Femenino</td>
+                                </tr>
+                                <tr>
+                                    <td>7</td>
+                                    <td><code>fase</code></td>
+                                    <td>Phase/Stage</td>
+                                    <td>Text</td>
+                                    <td>Final, Semifinal, Quarterfinal</td>
+                                </tr>
+                                <tr>
+                                    <td>8</td>
+                                    <td><code>ronda</code></td>
+                                    <td>Round type</td>
+                                    <td>Text</td>
+                                    <td>Cuadro</td>
+                                </tr>
+                                <tr>
+                                    <td>9</td>
+                                    <td><code>pareja1_jugador1</code></td>
+                                    <td>Team 1 - Player 1 name</td>
+                                    <td>Text (required)</td>
+                                    <td>Ariana Sánchez Fallada</td>
+                                </tr>
+                                <tr>
+                                    <td>10</td>
+                                    <td><code>pareja1_jugador2</code></td>
+                                    <td>Team 1 - Player 2 name</td>
+                                    <td>Text (required)</td>
+                                    <td>Paula Josemaría Martín</td>
+                                </tr>
+                                <tr>
+                                    <td>11</td>
+                                    <td><code>pareja2_jugador1</code></td>
+                                    <td>Team 2 - Player 1 name</td>
+                                    <td>Text (required)</td>
+                                    <td>Beatriz González</td>
+                                </tr>
+                                <tr>
+                                    <td>12</td>
+                                    <td><code>pareja2_jugador2</code></td>
+                                    <td>Team 2 - Player 2 name</td>
+                                    <td>Text (required)</td>
+                                    <td>Delfina Brea</td>
+                                </tr>
+                                <tr>
+                                    <td>13</td>
+                                    <td><code>set1_pareja1</code></td>
+                                    <td>Set 1 - Team 1 score</td>
+                                    <td>Integer (0-99)</td>
+                                    <td>6</td>
+                                </tr>
+                                <tr>
+                                    <td>14</td>
+                                    <td><code>set1_pareja2</code></td>
+                                    <td>Set 1 - Team 2 score</td>
+                                    <td>Integer (0-99)</td>
+                                    <td>4</td>
+                                </tr>
+                                <tr>
+                                    <td>15</td>
+                                    <td><code>set2_pareja1</code></td>
+                                    <td>Set 2 - Team 1 score</td>
+                                    <td>Integer (0-99)</td>
+                                    <td>7</td>
+                                </tr>
+                                <tr>
+                                    <td>16</td>
+                                    <td><code>set2_pareja2</code></td>
+                                    <td>Set 2 - Team 2 score</td>
+                                    <td>Integer (0-99)</td>
+                                    <td>5</td>
+                                </tr>
+                                <tr>
+                                    <td>17</td>
+                                    <td><code>set3_pareja1</code></td>
+                                    <td>Set 3 - Team 1 score (optional)</td>
+                                    <td>Integer (0-99) or empty</td>
+                                    <td>6 or empty</td>
+                                </tr>
+                                <tr>
+                                    <td>18</td>
+                                    <td><code>set3_pareja2</code></td>
+                                    <td>Set 3 - Team 2 score (optional)</td>
+                                    <td>Integer (0-99) or empty</td>
+                                    <td>4 or empty</td>
+                                </tr>
+                                <tr>
+                                    <td>19</td>
+                                    <td><code>pareja_ganadora</code></td>
+                                    <td>Winning team (player1_player2)</td>
+                                    <td>Text</td>
+                                    <td>Ariana Sánchez Fallada_Paula Josemaría Martín</td>
+                                </tr>
+                                <tr>
+                                    <td>20</td>
+                                    <td><code>pareja_perdedora</code></td>
+                                    <td>Losing team (player1_player2)</td>
+                                    <td>Text</td>
+                                    <td>Beatriz González_Delfina Brea</td>
+                                </tr>
+                                <tr>
+                                    <td>21</td>
+                                    <td><code>resultado_string</code></td>
+                                    <td>Match result string</td>
+                                    <td>Text</td>
+                                    <td>6-4 / 7-5</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Validation Rules -->
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Validation Rules</h5>
+                </div>
+                <div class="card-body">
+                    <ul>
+                        <li><strong>Year:</strong> Must be a numeric value between 1900 and 2100</li>
+                        <li><strong>Dates:</strong> Must follow DD.MM.YYYY format (e.g., 02.09.2024)</li>
+                        <li><strong>Category:</strong> Must be one of: Masculino, Femenino, Mixed (case-insensitive)</li>
+                        <li><strong>Player names:</strong> Cannot be empty for all four player fields</li>
+                        <li><strong>Set scores:</strong> Must be numeric integers between 0 and 99</li>
+                        <li><strong>Set 3:</strong> Optional - can be empty if match ended in 2 sets</li>
+                        <li><strong>Encoding:</strong> Files should be UTF-8 encoded (UTF-16, Latin-1, and CP1252 are also supported)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Example CSV -->
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Example CSV Content</h5>
+                </div>
+                <div class="card-body">
+                    <p>Here's a complete example of a valid CSV file with one match:</p>
+                    <pre class="bg-light p-3"><code>nombre_torneo,anio_torneo,fecha_inicio_torneo,fecha_final_torneo,pista_principal,categoria,fase,ronda,pareja1_jugador1,pareja1_jugador2,pareja2_jugador1,pareja2_jugador2,set1_pareja1,set1_pareja2,set2_pareja1,set2_pareja2,set3_pareja1,set3_pareja2,pareja_ganadora,pareja_perdedora,resultado_string
+Madrid Premier Padel P1 2024,2024,02.09.2024,08.09.2024,Wizink Center,Femenino,Final,Cuadro,Ariana Sánchez Fallada,Paula Josemaría Martín,Beatriz González,Delfina Brea,6,4,7,5,,,Ariana Sánchez Fallada_Paula Josemaría Martín,Beatriz González_Delfina Brea,6-4 / 7-5</code></pre>
+                </div>
+            </div>
+
+            <!-- Download Template -->
+            <div class="card mb-4">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Need a template?</h5>
+                    <p class="card-text">You can use one of the example CSV files in the repository as a template for your own data.</p>
+                    <a href="{{ url_for('dataset.list_dataset') }}" class="btn btn-primary">
+                        <i data-feather="upload"></i> Upload Your CSV
+                    </a>
+                </div>
+            </div>
+
+            <!-- Common Errors -->
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">Common Validation Errors</h5>
+                </div>
+                <div class="card-body">
+                    <dl>
+                        <dt>Missing required columns</dt>
+                        <dd>Ensure all 21 columns are present in your CSV header, even if some values are empty.</dd>
+
+                        <dt>Invalid date format</dt>
+                        <dd>Dates must use DD.MM.YYYY format (e.g., 15.04.2023), not DD/MM/YYYY or YYYY-MM-DD.</dd>
+
+                        <dt>Non-numeric year or scores</dt>
+                        <dd>Year and set scores must contain only numbers, no text or special characters.</dd>
+
+                        <dt>Empty player names</dt>
+                        <dd>All four player name fields (pareja1_jugador1, pareja1_jugador2, pareja2_jugador1, pareja2_jugador2) must contain values.</dd>
+
+                        <dt>Invalid category</dt>
+                        <dd>Category must be exactly "Masculino", "Femenino", or "Mixed" (case-insensitive).</dd>
+                    </dl>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

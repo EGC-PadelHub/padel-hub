@@ -618,16 +618,161 @@
                                     document.body.appendChild(overlay);
                                 }
 
+                                // Helper to show a modal with structure validation errors (padel format)
+                                function showStructureErrorModal(filename, errors, csvContent) {
+                                    // remove existing modal if present
+                                    const existing = document.getElementById('csvErrorModalOverlay');
+                                    if (existing) existing.remove();
+
+                                    const overlay = document.createElement('div');
+                                    overlay.id = 'csvErrorModalOverlay';
+                                    overlay.style.position = 'fixed';
+                                    overlay.style.top = '0';
+                                    overlay.style.left = '0';
+                                    overlay.style.width = '100%';
+                                    overlay.style.height = '100%';
+                                    overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
+                                    overlay.style.display = 'flex';
+                                    overlay.style.alignItems = 'center';
+                                    overlay.style.justifyContent = 'center';
+                                    overlay.style.zIndex = '9999';
+
+                                    const box = document.createElement('div');
+                                    box.style.background = 'white';
+                                    box.style.padding = '1.5rem';
+                                    box.style.borderRadius = '6px';
+                                    box.style.maxWidth = '1000px';
+                                    box.style.width = '95%';
+                                    box.style.maxHeight = '85%';
+                                    box.style.overflow = 'auto';
+
+                                    const title = document.createElement('h4');
+                                    title.textContent = `CSV Validation Error: ${filename}`;
+                                    title.style.color = '#d32f2f';
+                                    title.style.marginBottom = '1rem';
+                                    box.appendChild(title);
+
+                                    // Error summary section
+                                    const errorSummary = document.createElement('div');
+                                    errorSummary.style.marginBottom = '1rem';
+                                    errorSummary.style.padding = '0.75rem';
+                                    errorSummary.style.background = '#fff3cd';
+                                    errorSummary.style.border = '1px solid #ffc107';
+                                    errorSummary.style.borderRadius = '4px';
+                                    
+                                    const summaryTitle = document.createElement('strong');
+                                    summaryTitle.textContent = `Found ${errors.length} validation error${errors.length > 1 ? 's' : ''}:`;
+                                    summaryTitle.style.display = 'block';
+                                    summaryTitle.style.marginBottom = '0.5rem';
+                                    errorSummary.appendChild(summaryTitle);
+                                    
+                                    const errorList = document.createElement('ul');
+                                    errorList.style.margin = '0';
+                                    errorList.style.paddingLeft = '1.5rem';
+                                    errors.forEach(function(err) {
+                                        const li = document.createElement('li');
+                                        li.textContent = err;
+                                        li.style.marginBottom = '0.25rem';
+                                        errorList.appendChild(li);
+                                    });
+                                    errorSummary.appendChild(errorList);
+                                    box.appendChild(errorSummary);
+
+                                    // CSV preview section with highlighted errors
+                                    if (csvContent) {
+                                        const previewTitle = document.createElement('h5');
+                                        previewTitle.textContent = 'CSV Preview (errors highlighted):';
+                                        previewTitle.style.marginTop = '1rem';
+                                        previewTitle.style.marginBottom = '0.5rem';
+                                        box.appendChild(previewTitle);
+
+                                        const csvContainer = document.createElement('div');
+                                        csvContainer.style.background = '#f6f8fa';
+                                        csvContainer.style.padding = '0.75rem';
+                                        csvContainer.style.borderRadius = '4px';
+                                        csvContainer.style.fontFamily = 'monospace';
+                                        csvContainer.style.fontSize = '0.85rem';
+                                        csvContainer.style.overflow = 'auto';
+                                        csvContainer.style.maxHeight = '400px';
+                                        csvContainer.style.border = '1px solid #ddd';
+
+                                        // Extract error line numbers from error messages
+                                        const errorLines = new Set();
+                                        errors.forEach(function(err) {
+                                            const match = err.match(/Row (\d+):/);
+                                            if (match) {
+                                                errorLines.add(parseInt(match[1]));
+                                            }
+                                        });
+
+                                        const lines = csvContent.split('\n');
+                                        lines.forEach(function(line, idx) {
+                                            const lineNumber = idx + 1; // 1-indexed
+                                            const lineDiv = document.createElement('div');
+                                            lineDiv.style.padding = '2px 4px';
+                                            lineDiv.style.whiteSpace = 'pre';
+                                            
+                                            // Line number
+                                            const numSpan = document.createElement('span');
+                                            numSpan.textContent = lineNumber.toString().padStart(3, ' ') + ' | ';
+                                            numSpan.style.color = '#666';
+                                            numSpan.style.userSelect = 'none';
+                                            lineDiv.appendChild(numSpan);
+                                            
+                                            // Line content
+                                            const contentSpan = document.createElement('span');
+                                            contentSpan.textContent = line;
+                                            
+                                            // Highlight error lines
+                                            if (errorLines.has(lineNumber)) {
+                                                lineDiv.style.background = '#ffebee';
+                                                lineDiv.style.borderLeft = '3px solid #d32f2f';
+                                                lineDiv.style.paddingLeft = '8px';
+                                                contentSpan.style.color = '#d32f2f';
+                                                contentSpan.style.fontWeight = 'bold';
+                                                
+                                                // Add error badge
+                                                const badge = document.createElement('span');
+                                                badge.textContent = ' ⚠ ERROR';
+                                                badge.style.background = '#d32f2f';
+                                                badge.style.color = 'white';
+                                                badge.style.padding = '0.1rem 0.4rem';
+                                                badge.style.borderRadius = '3px';
+                                                badge.style.fontSize = '0.75rem';
+                                                badge.style.marginLeft = '0.5rem';
+                                                badge.style.fontWeight = 'bold';
+                                                contentSpan.appendChild(badge);
+                                            }
+                                            
+                                            lineDiv.appendChild(contentSpan);
+                                            csvContainer.appendChild(lineDiv);
+                                        });
+
+                                        box.appendChild(csvContainer);
+                                    }
+
+                                    const close = document.createElement('button');
+                                    close.className = 'btn btn-primary mt-3';
+                                    close.textContent = 'Close';
+                                    close.addEventListener('click', function () { overlay.remove(); });
+                                    box.appendChild(close);
+
+                                    overlay.appendChild(box);
+                                    document.body.appendChild(overlay);
+                                }
+
                                 this.on('error', function (file, response) {
                                 console.error("Error uploading file: ", response);
                                 // response may be a string or an object
                                 let errorMsg = 'CSV not valid: ' + file.name;
                                 let snippet = null;
                                 let line = null;
+                                let data = null;
+                                
                                 if (response) {
                                     try {
                                         // If server returned JSON, Dropzone passes the parsed object
-                                        let data = response;
+                                        data = response;
                                         if (typeof response === 'string') {
                                             try { data = JSON.parse(response); } catch (e) { data = { message: response }; }
                                         }
@@ -642,10 +787,7 @@
                                         console.warn('Could not parse error response', e);
                                     }
                                 }
-                                // We intentionally do NOT append an inline alert paragraph for CSV syntax errors.
-                                // The modal will surface the error details. Keep the alert area untouched.
-                                console.log('CSV upload error (modal will show):', errorMsg);
-
+                                
                                 // Remove the file preview from Dropzone so the user can re-add a corrected file.
                                 try {
                                     if (this && typeof this.removeFile === 'function') {
@@ -655,17 +797,35 @@
                                     console.warn('Could not remove file preview from Dropzone', e);
                                 }
 
-                                // show modal with snippet if available
+                                // Check if we have structure validation errors (padel format)
+                                if (data && data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+                                    // Structure validation errors - read file content and show in modal
+                                    const reader = new FileReader();
+                                    reader.onload = function(e) {
+                                        const csvContent = e.target.result;
+                                        showStructureErrorModal(file.name, data.errors, csvContent);
+                                    };
+                                    reader.onerror = function() {
+                                        // Fallback if file reading fails
+                                        showStructureErrorModal(file.name, data.errors, null);
+                                    };
+                                    reader.readAsText(file);
+                                    return;
+                                }
+
+                                // show modal with snippet if available (syntax errors)
                                 let snippet_start = null;
                                 if (response && typeof response === 'object' && response.snippet_start) {
                                     snippet_start = response.snippet_start;
-                                } else if (typeof data !== 'undefined' && data && data.snippet_start) {
+                                } else if (data && data.snippet_start) {
                                     snippet_start = data.snippet_start;
                                 }
 
-                                // show modal with snippet if available (pass snippet_start if present)
                                 if (snippet) {
                                     showCsvErrorModal(file.name, line, errorMsg, snippet, snippet_start);
+                                } else if (!data || !data.errors) {
+                                    // Fallback: show a simple alert if no structured errors or snippet
+                                    alert(errorMsg);
                                 }
                             });
 

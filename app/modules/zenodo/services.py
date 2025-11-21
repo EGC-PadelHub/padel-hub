@@ -177,14 +177,14 @@ class ZenodoService(BaseService):
         """
 
         logger.info("Dataset sending to Zenodo...")
-        logger.info(f"Publication type...{dataset.ds_meta_data.publication_type.value}")
+        logger.info(f"Tournament type...{dataset.ds_meta_data.tournament_type.value}")
 
         metadata = {
             "title": dataset.ds_meta_data.title,
-            "upload_type": "dataset" if dataset.ds_meta_data.publication_type.value == "none" else "publication",
+            "upload_type": "dataset" if dataset.ds_meta_data.tournament_type.value == "none" else "publication",
             "publication_type": (
-                dataset.ds_meta_data.publication_type.value
-                if dataset.ds_meta_data.publication_type.value != "none"
+                dataset.ds_meta_data.tournament_type.value
+                if dataset.ds_meta_data.tournament_type.value != "none"
                 else None
             ),
             "description": dataset.ds_meta_data.description,

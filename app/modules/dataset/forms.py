@@ -3,7 +3,7 @@ from wtforms import FieldList, FormField, SelectField, StringField, SubmitField,
 from wtforms import RadioField
 from wtforms.validators import URL, DataRequired, Optional
 
-from app.modules.dataset.models import PublicationType
+from app.modules.dataset.models import TournamentType
 
 
 class AuthorForm(FlaskForm):
@@ -28,9 +28,18 @@ class FeatureModelForm(FlaskForm):
     uvl_filename = StringField("CSV Filename", validators=[DataRequired()])
     title = StringField("Title", validators=[Optional()])
     desc = TextAreaField("Description", validators=[Optional()])
-    publication_type = SelectField(
-        "Publication type",
-        choices=[(pt.value, pt.name.replace("_", " ").title()) for pt in PublicationType],
+    tournament_type = SelectField(
+        "Padel Tournament Type",
+        choices=[
+            ("", "--"),
+            ("master_final", "Master Final"),
+            ("master", "Master"),
+            ("open", "Open"),
+            ("qualifying", "Qualifying"),
+            ("national_tours", "National Tours"),
+            ("other", "Other"),
+        ],
+        default="",
         validators=[Optional()],
     )
     publication_doi = StringField("Publication DOI", validators=[Optional(), URL()])
@@ -49,29 +58,68 @@ class FeatureModelForm(FlaskForm):
             "uvl_filename": self.uvl_filename.data,
             "title": self.title.data,
             "description": self.desc.data,
-            "publication_type": self.publication_type.data,
+            "tournament_type": self.convert_tournament_type(self.tournament_type.data),
             "publication_doi": self.publication_doi.data,
             "tags": self.tags.data,
             "uvl_version": self.version.data,
         }
 
+    def convert_tournament_type(self, value):
+        """Convert form value to TournamentType enum name."""
+        # Handle empty string or None as NONE
+        if not value or value == "":
+            return "NONE"
+        for pt in TournamentType:
+            if pt.value == value:
+                return pt.name
+        return "NONE"
+
 
 class DataSetForm(FlaskForm):
     title = StringField("Title", validators=[DataRequired()])
     desc = TextAreaField("Description", validators=[DataRequired()])
-    publication_type = SelectField(
-        "Publication type",
-        choices=[(pt.value, pt.name.replace("_", " ").title()) for pt in PublicationType],
-        validators=[DataRequired()],
+    tournament_type = SelectField(
+        "Padel Tournament Type",
+        choices=[
+            ("", "--"),
+            ("master_final", "Master Final"),
+            ("master", "Master"),
+            ("open", "Open"),
+            ("qualifying", "Qualifying"),
+            ("national_tours", "National Tours"),
+            ("other", "Other"),
+        ],
+        default="",
+        validators=[DataRequired(message="Tournament Type is required")],
     )
     publication_doi = StringField("Publication DOI", validators=[Optional(), URL()])
     dataset_doi = StringField("Dataset DOI", validators=[Optional(), URL()])
     tags = StringField("Tags (separated by commas)")
+    
+    # Padel-specific metadata fields
+    tournament_name = StringField("Tournament Name", validators=[Optional()])
+    tournament_year = StringField("Tournament Year", validators=[Optional()])
+    tournament_category = SelectField(
+        "Tournament Category",
+        choices=[
+            ("", "Not specified"),
+            ("masculino", "Masculino"),
+            ("femenino", "Femenino"),
+            ("mixed", "Mixed")
+        ],
+        validators=[Optional()]
+    )
+    match_count = StringField("Number of Matches", validators=[Optional()])
+    
     authors = FieldList(FormField(AuthorForm))
     feature_models = FieldList(FormField(FeatureModelForm), min_entries=1)
     upload_type = RadioField(
         "Upload type",
-        choices=[("public", "Permanent upload to Zenodo"), ("anonymous", "Permanent (anonymous) upload to Zenodo"), ("draft", "Draft")],
+        choices=[
+            ("public", "Permanent upload to Zenodo"),
+            ("anonymous", "Permanent (anonymous) upload to Zenodo"),
+            ("draft", "Draft")
+        ],
         default="public",
     )
 
@@ -79,12 +127,12 @@ class DataSetForm(FlaskForm):
 
     def get_dsmetadata(self):
 
-        publication_type_converted = self.convert_publication_type(self.publication_type.data)
+        tournament_type_converted = self.convert_tournament_type(self.tournament_type.data)
 
         return {
             "title": self.title.data,
             "description": self.desc.data,
-            "publication_type": publication_type_converted,
+            "tournament_type": tournament_type_converted,
             "publication_doi": self.publication_doi.data,
             "dataset_doi": self.dataset_doi.data,
             "tags": self.tags.data,
@@ -92,8 +140,12 @@ class DataSetForm(FlaskForm):
             "anonymous": True if getattr(self, 'upload_type', None) and self.upload_type.data == 'anonymous' else False,
         }
 
-    def convert_publication_type(self, value):
-        for pt in PublicationType:
+    def convert_tournament_type(self, value):
+        """Convert form value to TournamentType enum name."""
+        # Handle empty string or None as NONE
+        if not value or value == "":
+            return "NONE"
+        for pt in TournamentType:
             if pt.value == value:
                 return pt.name
         return "NONE"

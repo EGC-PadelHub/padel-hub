@@ -1,21 +1,102 @@
-{# Partial: CSV preview table #}
+{# Partial: CSV preview table for padel match datasets #}
 {% if rows and rows|length > 0 %}
     <div class="card mt-3">
         <div class="card-body">
-            <h5>CSV preview</h5>
-            <div class="table-responsive">
-                <table class="table table-sm table-striped">
-                    <tbody>
-                        {% for row in rows %}
-                            <tr>
-                                {% for cell in row %}
-                                    <td>{{ cell }}</td>
+            <h5><i data-feather="eye"></i> Match Preview</h5>
+            
+            {% if rows|length > 1 %}
+                {# Enhanced preview for padel matches (assumes padel structure) #}
+                {# First row is header, skip it and show formatted matches #}
+                {% for row in rows[1:] %}
+                    {% if row|length >= 21 %}
+                        <div class="match-preview-card mb-3 p-3 border rounded">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="text-primary">
+                                        <i data-feather="award"></i> {{ row[0] }} ({{ row[1] }})
+                                    </h6>
+                                    <p class="mb-1">
+                                        <small class="text-muted">
+                                            <i data-feather="calendar"></i> {{ row[2] }} - {{ row[3] }}
+                                        </small>
+                                    </p>
+                                    <p class="mb-1">
+                                        <small class="text-muted">
+                                            <i data-feather="map-pin"></i> {{ row[4] }}
+                                        </small>
+                                    </p>
+                                    <p class="mb-0">
+                                        <span class="badge badge-info">{{ row[5] }}</span>
+                                        <span class="badge badge-secondary">{{ row[6] }}</span>
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="match-teams">
+                                        <p class="mb-1">
+                                            <strong>Team 1:</strong> {{ row[8] }} / {{ row[9] }}
+                                        </p>
+                                        <p class="mb-1">
+                                            <strong>Team 2:</strong> {{ row[10] }} / {{ row[11] }}
+                                        </p>
+                                        <p class="mb-0">
+                                            <strong>Score:</strong> 
+                                            <span class="badge badge-success">
+                                                {{ row[12] }}-{{ row[13] }}
+                                                {% if row[14] %}
+                                                    / {{ row[14] }}-{{ row[15] }}
+                                                {% endif %}
+                                                {% if row[16] %}
+                                                    / {{ row[16] }}-{{ row[17] }}
+                                                {% endif %}
+                                            </span>
+                                        </p>
+                                        {% if row[20] %}
+                                            <p class="mb-0">
+                                                <small class="text-muted">Result: {{ row[20] }}</small>
+                                            </p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+                
+                {# Show raw table as fallback #}
+                <details class="mt-3">
+                    <summary class="text-muted" style="cursor: pointer;">
+                        <small>Show raw CSV data</small>
+                    </summary>
+                    <div class="table-responsive mt-2">
+                        <table class="table table-sm table-striped table-bordered">
+                            <tbody>
+                                {% for row in rows %}
+                                    <tr>
+                                        {% for cell in row %}
+                                            <td style="font-size: 0.85em;">{{ cell }}</td>
+                                        {% endfor %}
+                                    </tr>
                                 {% endfor %}
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+                            </tbody>
+                        </table>
+                    </div>
+                </details>
+            {% else %}
+                {# Fallback: just show the table if structure is unknown #}
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped">
+                        <tbody>
+                            {% for row in rows %}
+                                <tr>
+                                    {% for cell in row %}
+                                        <td>{{ cell }}</td>
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
         </div>
     </div>
 {% else %}

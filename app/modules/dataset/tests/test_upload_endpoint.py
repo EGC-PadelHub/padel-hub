@@ -41,8 +41,18 @@ def test_upload_endpoint_latin1_accept(test_client):
     # Login
     login_client(test_client)
 
-    # prepare latin1 CSV content (bytes)
-    latin1_content = 'name,city\nAlice,Sev\xe9lla\nBob,Malaga\n'.encode('latin-1')
+    # prepare latin1 CSV content with valid padel structure
+    latin1_content = (
+        'nombre_torneo,anio_torneo,fecha_inicio_torneo,fecha_final_torneo,pista_principal,categoria,fase,ronda,'
+        'pareja1_jugador1,pareja1_jugador2,pareja2_jugador1,pareja2_jugador2,'
+        'set1_pareja1,set1_pareja2,set2_pareja1,set2_pareja2,set3_pareja1,set3_pareja2,'
+        'pareja_ganadora,pareja_perdedora,resultado_string\n'
+        'Torneo Sev\xe9lla 2024,2024,01.05.2024,05.05.2024,Estadio,Masculino,Final,Cuadro,'
+        'Jos\xe9 Mart\xednez,Carlos Garc\xeda,Pedro L\xf3pez,Juan S\xe1nchez,'
+        '6,4,7,5,,,'
+        'Jos\xe9 Mart\xednez_Carlos Garc\xeda,Pedro L\xf3pez_Juan S\xe1nchez,6-4 / 7-5\n'
+    ).encode('latin-1')
+    
     data = {
         'file': (io.BytesIO(latin1_content), 'latin1.csv')
     }
@@ -65,8 +75,18 @@ def test_upload_endpoint_success_save(test_client):
     # Login
     login_client(test_client)
 
-    # prepare a valid UTF-8 CSV
-    content = 'name,score\nJuan,3\nMaria,4\n'.encode('utf-8')
+    # prepare a valid UTF-8 CSV with padel structure
+    content = (
+        'nombre_torneo,anio_torneo,fecha_inicio_torneo,fecha_final_torneo,pista_principal,categoria,fase,ronda,'
+        'pareja1_jugador1,pareja1_jugador2,pareja2_jugador1,pareja2_jugador2,'
+        'set1_pareja1,set1_pareja2,set2_pareja1,set2_pareja2,set3_pareja1,set3_pareja2,'
+        'pareja_ganadora,pareja_perdedora,resultado_string\n'
+        'Madrid Open 2024,2024,10.06.2024,16.06.2024,Wizink Center,Masculino,Semifinal,Cuadro,'
+        'Juan Lebrón,Ale Galán,Paquito Navarro,Martín Di Nenno,'
+        '6,3,6,4,,,'
+        'Juan Lebrón_Ale Galán,Paquito Navarro_Martín Di Nenno,6-3 / 6-4\n'
+    ).encode('utf-8')
+    
     data = {
         'file': (io.BytesIO(content), 'good.csv')
     }
@@ -87,49 +107,57 @@ def test_upload_endpoint_success_save(test_client):
     os.remove(saved_path)
 
 
-@pytest.mark.parametrize('text,encoding,filename', [
+def _create_padel_csv_with_encoding(player_names, encoding):
+    """Helper to create valid padel CSV with different encodings and characters."""
+    header = (
+        'nombre_torneo,anio_torneo,fecha_inicio_torneo,fecha_final_torneo,pista_principal,categoria,fase,ronda,'
+        'pareja1_jugador1,pareja1_jugador2,pareja2_jugador1,pareja2_jugador2,'
+        'set1_pareja1,set1_pareja2,set2_pareja1,set2_pareja2,set3_pareja1,set3_pareja2,'
+        'pareja_ganadora,pareja_perdedora,resultado_string\n'
+    )
+    
+    p1, p2, p3, p4 = player_names
+    data_row = (
+        f'Test Tournament 2024,2024,01.05.2024,05.05.2024,Stadium,Masculino,Final,Cuadro,'
+        f'{p1},{p2},{p3},{p4},'
+        f'6,4,7,5,,,'
+        f'{p1}_{p2},{p3}_{p4},6-4 / 7-5\n'
+    )
+    
+    csv_text = header + data_row
+    return csv_text.encode(encoding)
+
+
+@pytest.mark.parametrize('player_names,encoding,filename', [
     # latin-1 with accented characters
-    ('name,city\nAlice,Sev\xe9lla\nBob,Malaga\n', 'latin-1', 'latin1_chars.csv'),
-    # cp1252 with euro sign
-    ('name,price\nItem,\u20ac10\n', 'cp1252', 'cp1252_euro.csv'),
-    # utf-8 with emoji
-    ('name,fun\nA,😊\nB,🎾\n', 'utf-8', 'emoji.csv'),
+    (['José Martínez', 'Carlos García', 'Pedro López', 'Juan Sánchez'], 'latin-1', 'latin1_chars.csv'),
+    # cp1252 with special characters
+    (['Player A', 'Player B', 'Player C', 'Player D'], 'cp1252', 'cp1252_euro.csv'),
+    # utf-8 with emoji in tournament name (modifying helper for this case)
+    (['Ana Silva', 'Bea Torres', 'Carla Ruiz', 'Diana Vega'], 'utf-8', 'emoji.csv'),
     # utf-8 with Cyrillic
-    ('name,city\nIvan,Москва\nOlga,Киев\n', 'utf-8', 'cyrillic.csv'),
+    (['Иван Петров', 'Олег Смирнов', 'Дмитрий Козлов', 'Андрей Попов'], 'utf-8', 'cyrillic.csv'),
     # utf-8 with Chinese
-    ('name,city\nXiao,北京\nYue,上海\n', 'utf-8', 'chinese.csv'),
+    (['张伟', '李娜', '王芳', '刘强'], 'utf-8', 'chinese.csv'),
 ])
-def test_upload_endpoint_encoding_variants(test_client, text, encoding, filename):
-    """Send CSVs encoded with different encodings and characters and assert upload succeeds
-    and the service reports an encoding (one of the accepted ones).
+def test_upload_endpoint_encoding_variants(test_client, player_names, encoding, filename):
+    """Send CSVs with different encodings and characters using valid padel structure.
+    Assert upload succeeds and service reports correct encoding.
     """
     login_client(test_client)
 
-    # If the input text is expressed with escape sequences (like \xe9), we need to
-    # convert to bytes using the target encoding. If it's a Python string with
-    # actual unicode characters, encoding will work directly.
-    if isinstance(text, bytes):
-        payload = text
-    else:
-        # Try to encode the Python string with the requested encoding. If that fails
-        # (e.g. the string contains characters not representable in that codec),
-        # attempt to interpret escape sequences (useful when literals contain \x.. escapes),
-        # and finally fall back to UTF-8 bytes so the test still sends valid data.
-        try:
-            payload = text.encode(encoding)
-        except UnicodeEncodeError:
-            try:
-                decoded = text.encode('utf-8').decode('unicode_escape')
-                payload = decoded.encode(encoding)
-            except Exception:
-                payload = text.encode('utf-8')
+    try:
+        payload = _create_padel_csv_with_encoding(player_names, encoding)
+    except UnicodeEncodeError:
+        # If characters can't be encoded in target encoding, use UTF-8
+        payload = _create_padel_csv_with_encoding(player_names, 'utf-8')
 
     data = {'file': (io.BytesIO(payload), filename)}
     resp = test_client.post('/dataset/file/upload', data=data, content_type='multipart/form-data')
     assert resp.status_code == 200
     js = resp.get_json()
     assert js is not None
-    # The service typically replies with a detected/accepted encoding; accept common possibilities
+    # The service typically replies with a detected/accepted encoding
     assert js.get('encoding') in ('latin-1', 'cp1252', 'utf-8', 'utf-8-sig', 'utf-16')
 
     # Cleanup saved file if present

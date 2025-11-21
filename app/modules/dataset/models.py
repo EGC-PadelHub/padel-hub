@@ -8,25 +8,13 @@ from sqlalchemy import Boolean
 from app import db
 
 
-class PublicationType(Enum):
+class TournamentType(Enum):
     NONE = "none"
-    ANNOTATION_COLLECTION = "annotationcollection"
-    BOOK = "book"
-    BOOK_SECTION = "section"
-    CONFERENCE_PAPER = "conferencepaper"
-    DATA_MANAGEMENT_PLAN = "datamanagementplan"
-    JOURNAL_ARTICLE = "article"
-    PATENT = "patent"
-    PREPRINT = "preprint"
-    PROJECT_DELIVERABLE = "deliverable"
-    PROJECT_MILESTONE = "milestone"
-    PROPOSAL = "proposal"
-    REPORT = "report"
-    SOFTWARE_DOCUMENTATION = "softwaredocumentation"
-    TAXONOMIC_TREATMENT = "taxonomictreatment"
-    TECHNICAL_NOTE = "technicalnote"
-    THESIS = "thesis"
-    WORKING_PAPER = "workingpaper"
+    MASTER_FINAL = "master_final"
+    MASTER = "master"
+    OPEN = "open"
+    QUALIFYING = "qualifying"
+    NATIONAL_TOURS = "national_tours"
     OTHER = "other"
 
 
@@ -56,7 +44,7 @@ class DSMetaData(db.Model):
     deposition_id = db.Column(db.Integer)
     title = db.Column(db.String(120), nullable=False)
     description = db.Column(db.Text, nullable=False)
-    publication_type = db.Column(SQLAlchemyEnum(PublicationType), nullable=False)
+    tournament_type = db.Column(SQLAlchemyEnum(TournamentType), nullable=False)
     publication_doi = db.Column(db.String(120))
     dataset_doi = db.Column(db.String(120))
     # When True, the dataset will be uploaded to Zenodo/fakenodo anonymized (authors not exposed)
@@ -87,8 +75,8 @@ class DataSet(db.Model):
         db.session.delete(self)
         db.session.commit()
 
-    def get_cleaned_publication_type(self):
-        return self.ds_meta_data.publication_type.name.replace("_", " ").title()
+    def get_cleaned_tournament_type(self):
+        return self.ds_meta_data.tournament_type.name.replace("_", " ").title()
 
     def get_zenodo_url(self):
         return f"https://zenodo.org/record/{self.ds_meta_data.deposition_id}" if self.ds_meta_data.dataset_doi else None
@@ -117,7 +105,7 @@ class DataSet(db.Model):
             "created_at_timestamp": int(self.created_at.timestamp()),
             "description": self.ds_meta_data.description,
             "authors": [author.to_dict() for author in self.ds_meta_data.authors],
-            "publication_type": self.get_cleaned_publication_type(),
+            "tournament_type": self.get_cleaned_tournament_type(),
             "publication_doi": self.ds_meta_data.publication_doi,
             "dataset_doi": self.ds_meta_data.dataset_doi,
             "tags": self.ds_meta_data.tags.split(",") if self.ds_meta_data.tags else [],
@@ -165,3 +153,55 @@ class DOIMapping(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     dataset_doi_old = db.Column(db.String(120))
     dataset_doi_new = db.Column(db.String(120))
+
+
+class PadelDatasetMetrics(db.Model):
+    """Stores statistics and metadata specific to padel match datasets."""
+    id = db.Column(db.Integer, primary_key=True)
+    dataset_id = db.Column(db.Integer, db.ForeignKey("data_set.id"), nullable=False, unique=True)
+    
+    # Match statistics
+    total_matches = db.Column(db.Integer, default=0)
+    total_tournaments = db.Column(db.Integer, default=0)
+    unique_players = db.Column(db.Integer, default=0)
+    
+    # Date range
+    date_range_start = db.Column(db.Date, nullable=True)
+    date_range_end = db.Column(db.Date, nullable=True)
+    
+    # Categories (JSON string: e.g., '["Masculino", "Femenino"]')
+    categories = db.Column(db.String(200), nullable=True)
+    
+    # Tournament names (JSON string of unique tournament names)
+    tournament_names = db.Column(db.Text, nullable=True)
+    
+    # Additional metadata
+    has_set3_matches = db.Column(Boolean, default=False)
+    avg_sets_per_match = db.Column(db.Float, nullable=True)
+    
+    # Relationships
+    dataset = db.relationship("DataSet", backref=db.backref("padel_metrics", uselist=False))
+    
+    def __repr__(self):
+        return (
+            f"<PadelDatasetMetrics dataset_id={self.dataset_id} "
+            f"matches={self.total_matches} tournaments={self.total_tournaments}>"
+        )
+    
+    def to_dict(self):
+        """Convert metrics to dictionary for JSON serialization."""
+        import json
+        return {
+            "dataset_id": self.dataset_id,
+            "total_matches": self.total_matches,
+            "total_tournaments": self.total_tournaments,
+            "unique_players": self.unique_players,
+            "date_range": {
+                "start": self.date_range_start.isoformat() if self.date_range_start else None,
+                "end": self.date_range_end.isoformat() if self.date_range_end else None
+            },
+            "categories": json.loads(self.categories) if self.categories else [],
+            "tournament_names": json.loads(self.tournament_names) if self.tournament_names else [],
+            "has_set3_matches": self.has_set3_matches,
+            "avg_sets_per_match": self.avg_sets_per_match
+        }

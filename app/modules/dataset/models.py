@@ -165,3 +165,55 @@ class DOIMapping(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     dataset_doi_old = db.Column(db.String(120))
     dataset_doi_new = db.Column(db.String(120))
+
+
+class PadelDatasetMetrics(db.Model):
+    """Stores statistics and metadata specific to padel match datasets."""
+    id = db.Column(db.Integer, primary_key=True)
+    dataset_id = db.Column(db.Integer, db.ForeignKey("data_set.id"), nullable=False, unique=True)
+    
+    # Match statistics
+    total_matches = db.Column(db.Integer, default=0)
+    total_tournaments = db.Column(db.Integer, default=0)
+    unique_players = db.Column(db.Integer, default=0)
+    
+    # Date range
+    date_range_start = db.Column(db.Date, nullable=True)
+    date_range_end = db.Column(db.Date, nullable=True)
+    
+    # Categories (JSON string: e.g., '["Masculino", "Femenino"]')
+    categories = db.Column(db.String(200), nullable=True)
+    
+    # Tournament names (JSON string of unique tournament names)
+    tournament_names = db.Column(db.Text, nullable=True)
+    
+    # Additional metadata
+    has_set3_matches = db.Column(Boolean, default=False)
+    avg_sets_per_match = db.Column(db.Float, nullable=True)
+    
+    # Relationships
+    dataset = db.relationship("DataSet", backref=db.backref("padel_metrics", uselist=False))
+    
+    def __repr__(self):
+        return (
+            f"<PadelDatasetMetrics dataset_id={self.dataset_id} "
+            f"matches={self.total_matches} tournaments={self.total_tournaments}>"
+        )
+    
+    def to_dict(self):
+        """Convert metrics to dictionary for JSON serialization."""
+        import json
+        return {
+            "dataset_id": self.dataset_id,
+            "total_matches": self.total_matches,
+            "total_tournaments": self.total_tournaments,
+            "unique_players": self.unique_players,
+            "date_range": {
+                "start": self.date_range_start.isoformat() if self.date_range_start else None,
+                "end": self.date_range_end.isoformat() if self.date_range_end else None
+            },
+            "categories": json.loads(self.categories) if self.categories else [],
+            "tournament_names": json.loads(self.tournament_names) if self.tournament_names else [],
+            "has_set3_matches": self.has_set3_matches,
+            "avg_sets_per_match": self.avg_sets_per_match
+        }

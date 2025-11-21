@@ -102,8 +102,8 @@ class DataSetSeeder(BaseSeeder):
         # Create files, associate them with FeatureModels and copy files
         load_dotenv()
         working_dir = os.getenv("WORKING_DIR", "")
-        # point to csv_examples folder we provide for padel-hub
-        src_folder = os.path.join(working_dir, "app", "modules", "dataset", "csv_examples")
+        # point to padel_csv_examples folder we provide for padel-hub
+        src_folder = os.path.join(working_dir, "app", "modules", "dataset", "padel_csv_examples")
         for i in range(12):
             file_name = f"file{i+1}.csv"
             feature_model = seeded_feature_models[i]

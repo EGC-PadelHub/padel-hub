@@ -67,11 +67,31 @@ class DataSetForm(FlaskForm):
     publication_doi = StringField("Publication DOI", validators=[Optional(), URL()])
     dataset_doi = StringField("Dataset DOI", validators=[Optional(), URL()])
     tags = StringField("Tags (separated by commas)")
+    
+    # Padel-specific metadata fields
+    tournament_name = StringField("Tournament Name", validators=[Optional()])
+    tournament_year = StringField("Tournament Year", validators=[Optional()])
+    tournament_category = SelectField(
+        "Tournament Category",
+        choices=[
+            ("", "Not specified"),
+            ("masculino", "Masculino"),
+            ("femenino", "Femenino"),
+            ("mixed", "Mixed")
+        ],
+        validators=[Optional()]
+    )
+    match_count = StringField("Number of Matches", validators=[Optional()])
+    
     authors = FieldList(FormField(AuthorForm))
     feature_models = FieldList(FormField(FeatureModelForm), min_entries=1)
     upload_type = RadioField(
         "Upload type",
-        choices=[("public", "Permanent upload to Zenodo"), ("anonymous", "Permanent (anonymous) upload to Zenodo"), ("draft", "Draft")],
+        choices=[
+            ("public", "Permanent upload to Zenodo"),
+            ("anonymous", "Permanent (anonymous) upload to Zenodo"),
+            ("draft", "Draft")
+        ],
         default="public",
     )
 

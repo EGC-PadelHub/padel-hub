@@ -5,7 +5,7 @@ import zipfile
 import pytest
 
 from app import db
-from app.modules.dataset.models import DataSet, DSMetaData, PublicationType
+from app.modules.dataset.models import DataSet, DSMetaData, TournamentType
 from app.modules.featuremodel.models import FeatureModel, FMMetaData
 from app.modules.hubfile.models import Hubfile
 
@@ -20,7 +20,7 @@ class TestDatasetExport:
         dsmeta = DSMetaData(
             title="Test DS",
             description="Test",
-            publication_type=PublicationType.OTHER,
+            tournament_type=TournamentType.OTHER,
             publication_doi=None,
             dataset_doi=None,
             tags="a,b",
@@ -33,7 +33,7 @@ class TestDatasetExport:
         db.session.flush()
 
         # Feature model wrapper and file entry (we treat CSV as a hubfile)
-        fmmeta = FMMetaData(uvl_filename="data.csv", title="fm", description="d", publication_type=PublicationType.OTHER)
+        fmmeta = FMMetaData(uvl_filename="data.csv", title="fm", description="d", tournament_type=TournamentType.OTHER)
         db.session.add(fmmeta)
         db.session.flush()
 

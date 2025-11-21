@@ -2,7 +2,7 @@ import pytest
 
 from app import db
 from app.modules.auth.models import User
-from app.modules.dataset.models import DataSet, DSMetaData, Author, PublicationType
+from app.modules.dataset.models import DataSet, DSMetaData, Author, TournamentType
 from app.modules.zenodo.services import ZenodoService
 
 
@@ -15,7 +15,7 @@ def login_client(test_client):
 
 def _create_dataset_with_metadata(user, anonymous=False, authors=None):
     # Create DSMetaData and DataSet in DB
-    dsmeta = DSMetaData(title="T", description="D", publication_type=PublicationType.NONE, anonymous=anonymous)
+    dsmeta = DSMetaData(title="T", description="D", tournament_type=TournamentType.NONE, anonymous=anonymous)
     db.session.add(dsmeta)
     db.session.commit()
 
@@ -50,7 +50,6 @@ def test_create_new_deposition_sends_anonymous_creator(monkeypatch, test_client)
         def json(self):
             return {"id": 10, "conceptrecid": 42}
 
-
     def fake_post(url, params=None, json=None, headers=None):
         captured['url'] = url
         captured['json'] = json
@@ -84,7 +83,6 @@ def test_create_new_deposition_includes_real_authors(monkeypatch, test_client):
 
         def json(self):
             return {"id": 11}
-
 
     def fake_post(url, params=None, json=None, headers=None):
         captured['json'] = json

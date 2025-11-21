@@ -5,7 +5,7 @@ from app import db
 from app.modules.auth.models import User
 from app.modules.conftest import login, logout
 from app.modules.dataset.models import (
-    DataSet, DSMetaData, DSMetrics, DSDownloadRecord, DSViewRecord, PublicationType
+    DataSet, DSMetaData, DSMetrics, DSDownloadRecord, DSViewRecord, TournamentType
 )
 from app.modules.profile.models import UserProfile
 
@@ -34,7 +34,7 @@ def test_client(test_client):
             
             metadata = DSMetaData(
                 title=title, description=f"Description for {title}",
-                publication_type=PublicationType.JOURNAL_ARTICLE,
+                tournament_type=TournamentType.MASTER,
                 dataset_doi=doi, tags=tags, ds_metrics_id=metrics.id
             )
             db.session.add(metadata)
@@ -55,17 +55,34 @@ def test_client(test_client):
 
         # Create download records (3 downloads of metrics_user's datasets, 1 by metrics_user)
         db.session.add_all([
-            DSDownloadRecord(user_id=other_user.id, dataset_id=ds1.id, download_date=datetime.now(timezone.utc), download_cookie=f"cookie-{i}")
+            DSDownloadRecord(
+                user_id=other_user.id,
+                dataset_id=ds1.id,
+                download_date=datetime.now(timezone.utc),
+                download_cookie=f"cookie-{i}"
+            )
             for i in range(1, 4)
         ])
-        db.session.add(DSDownloadRecord(user_id=user_test.id, dataset_id=ds_other.id, download_date=datetime.now(timezone.utc), download_cookie="cookie-4"))
+        db.session.add(
+            DSDownloadRecord(
+                user_id=user_test.id,
+                dataset_id=ds_other.id,
+                download_date=datetime.now(timezone.utc),
+                download_cookie="cookie-4"
+            )
+        )
 
         # Create view records (4 views of metrics_user's datasets)
         db.session.add_all([
-            DSViewRecord(user_id=other_user.id, dataset_id=ds.id, view_date=datetime.now(timezone.utc), view_cookie=f"view-{i}")
+            DSViewRecord(
+                user_id=other_user.id,
+                dataset_id=ds.id,
+                view_date=datetime.now(timezone.utc),
+                view_cookie=f"view-{i}"
+            )
             for i, ds in enumerate([ds1, ds1, ds2, ds3], 1)
         ])
-        
+
         db.session.commit()
 
     yield test_client

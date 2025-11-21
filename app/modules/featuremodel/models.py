@@ -1,7 +1,7 @@
 from sqlalchemy import Enum as SQLAlchemyEnum
 
 from app import db
-from app.modules.dataset.models import Author, PublicationType
+from app.modules.dataset.models import Author, TournamentType
 
 
 class FeatureModel(db.Model):
@@ -20,7 +20,7 @@ class FMMetaData(db.Model):
     uvl_filename = db.Column(db.String(120), nullable=False)
     title = db.Column(db.String(120), nullable=False)
     description = db.Column(db.Text, nullable=False)
-    publication_type = db.Column(SQLAlchemyEnum(PublicationType), nullable=False)
+    tournament_type = db.Column(SQLAlchemyEnum(TournamentType), nullable=False)
     publication_doi = db.Column(db.String(120))
     tags = db.Column(db.String(120))
     uvl_version = db.Column(db.String(120))

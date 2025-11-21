@@ -25,7 +25,6 @@ from flask_wtf.csrf import generate_csrf
 
 from app.modules.dataset import dataset_bp
 from app.modules.dataset.forms import DataSetForm
-from app.modules.dataset.models import DSDownloadRecord
 from app.modules.dataset.services import (
     AuthorService,
     DataSetService,
@@ -148,6 +147,12 @@ def list_dataset():
     )
 
 
+@dataset_bp.route("/dataset/csv-schema", methods=["GET"])
+def csv_schema():
+    """Display CSV structure requirements for padel match datasets."""
+    return render_template("dataset/csv_schema.html")
+
+
 @dataset_bp.route("/dataset/file/upload", methods=["POST"])
 @login_required
 def upload():
@@ -207,6 +212,29 @@ def upload():
 
         return jsonify(resp), 400
 
+    # Validate padel-specific CSV structure
+    try:
+        padel_validation = tab.validate_padel_structure(file_path)
+    except Exception as e:
+        padel_validation = {"valid": False, "errors": [f"Internal validation error: {e}"]}
+
+    if not padel_validation.get("valid"):
+        # Return structure validation errors
+        resp = {
+            "message": "CSV structure error: file does not match required padel match format",
+            "filename": new_filename,
+            "errors": padel_validation.get("errors", []),
+            "required_columns": padel_validation.get("required_columns", [])
+        }
+        # Remove the saved file on validation failure
+        try:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+        except Exception as e:
+            logger.exception(f"Failed to remove temp file after structure validation failure: {e}")
+
+        return jsonify(resp), 400
+
     return (
         jsonify(
             {
@@ -250,7 +278,10 @@ def download_dataset(dataset_id):
     if callable(ds_title):
         ds_title = ds_title()
     if not ds_title:
-        ds_title = dataset.ds_meta_data.title if dataset.ds_meta_data and dataset.ds_meta_data.title else f"dataset-{dataset.id}"
+        if dataset.ds_meta_data and dataset.ds_meta_data.title:
+            ds_title = dataset.ds_meta_data.title
+        else:
+            ds_title = f"dataset-{dataset.id}"
     base_name = f"{slugify(ds_title)}-{dataset.id}"
 
     temp_dir = tempfile.mkdtemp()
@@ -273,7 +304,10 @@ def download_dataset(dataset_id):
         user_cookie = str(uuid.uuid4())  # Generate a new unique identifier if it does not exist
 
     # Record the download in the database (always, for each download action)
-    logger.info(f"Recording download for dataset_id={dataset_id}, user_id={current_user.id if current_user.is_authenticated else None}, cookie={user_cookie}")
+    user_id_log = current_user.id if current_user.is_authenticated else None
+    logger.info(
+        f"Recording download for dataset_id={dataset_id}, user_id={user_id_log}, cookie={user_cookie}"
+    )
     download_record = DSDownloadRecordService().create(
         user_id=current_user.id if current_user.is_authenticated else None,
         dataset_id=dataset_id,
@@ -330,7 +364,10 @@ def export_dataset(dataset_id: int):
     if callable(ds_title):
         ds_title = ds_title()
     if not ds_title:
-        ds_title = dataset.ds_meta_data.title if dataset.ds_meta_data and dataset.ds_meta_data.title else f"dataset-{dataset.id}"
+        if dataset.ds_meta_data and dataset.ds_meta_data.title:
+            ds_title = dataset.ds_meta_data.title
+        else:
+            ds_title = f"dataset-{dataset.id}"
     base_name = f"{slugify(ds_title)}-{dataset.id}"
 
     temp_dir = tempfile.mkdtemp()
@@ -464,20 +501,6 @@ def export_dataset(dataset_id: int):
         enc, _ = _detect_header(csv_path)
         with open(csv_path, "r", encoding=enc, errors="replace") as f:
             return f.read().encode("utf-8")
-        try:
-            # Create a temporary file to use the writer API, then read bytes back
-            tmp = tempfile.NamedTemporaryFile(suffix=".cnf", delete=False)
-            tmp.close()
-            fm = UVLReader(uvl_path).transform()
-            sat = FmToPysat(fm).transform()
-            DimacsWriter(tmp.name, sat).transform()
-            with open(tmp.name, "rb") as f:
-                data = f.read()
-            os.remove(tmp.name)
-            return data
-        except Exception as exc:
-            logger.exception("Failed to convert UVL to DIMACS: %s", exc)
-            return b""
 
     with ZipFile(zip_path, "w") as zipf:
         # Iterate dataset files via DB and resolve absolute paths via service
@@ -570,7 +593,11 @@ def export_dataset(dataset_id: int):
         user_cookie = str(uuid.uuid4())
 
     # Record the download in the database (always, for each download action)
-    logger.info(f"Recording export download for dataset_id={dataset_id}, user_id={current_user.id if current_user.is_authenticated else None}, cookie={user_cookie}")
+    user_id_log = current_user.id if current_user.is_authenticated else None
+    logger.info(
+        f"Recording export download for dataset_id={dataset_id}, "
+        f"user_id={user_id_log}, cookie={user_cookie}"
+    )
     download_record = DSDownloadRecordService().create(
         user_id=current_user.id if current_user.is_authenticated else None,
         dataset_id=dataset_id,
@@ -669,7 +696,7 @@ def get_unsynchronized_dataset(dataset_id):
     return render_template("dataset/view_dataset.html", dataset=dataset, csv_preview_rows=csv_preview_rows)
 
 
-@dataset_bp.route("/dataset/unsynchronized/<int:dataset_id>/sync", methods=["POST"]) 
+@dataset_bp.route("/dataset/unsynchronized/<int:dataset_id>/sync", methods=["POST"])
 @login_required
 def sync_unsynchronized_dataset(dataset_id):
     """Synchronize a previously saved (unsynchronized) dataset with Zenodo/fakenodo and publish it.

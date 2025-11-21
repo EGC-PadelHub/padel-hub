@@ -29,6 +29,12 @@ class Config:
         f"{os.getenv('MARIADB_PORT', '3306')}/"
         f"{os.getenv('MARIADB_DATABASE', 'default_db')}"
     )
+    # SSL disabled for Filess.io compatibility (free tier has SSL certificate issues)
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'connect_args': {
+            'ssl_disabled': True
+        }
+    }
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     TIMEZONE = "Europe/Madrid"
     TEMPLATES_AUTO_RELOAD = True
@@ -48,6 +54,11 @@ class TestingConfig(Config):
         f"{os.getenv('MARIADB_PORT', '3306')}/"
         f"{os.getenv('MARIADB_TEST_DATABASE', 'default_db')}"
     )
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'connect_args': {
+            'ssl_disabled': True
+        }
+    }
     WTF_CSRF_ENABLED = False
 
 

@@ -29,7 +29,7 @@ function send_query() {
             const searchCriteria = {
                 query: document.querySelector('#filter_title').value,
                 author: document.querySelector('#filter_author').value, 
-                publication_type: document.querySelector('#publication_type').value,
+                tournament_type: document.querySelector('#tournament_type').value,
                 sorting: document.querySelector('[name="sorting"]:checked').value,
             };
 
@@ -75,7 +75,7 @@ function send_query() {
                                     <div class="d-flex align-items-center justify-content-between">
                                         <h3><a href="${dataset.url}">${dataset.title}</a></h3>
                                         <div>
-                                            <span class="badge bg-primary" style="cursor: pointer;" onclick="set_publication_type_as_query('${dataset.publication_type}')">${dataset.publication_type}</span>
+                                            <span class="badge bg-primary" style="cursor: pointer;" onclick="set_tournament_type_as_query('${dataset.tournament_type}')">${dataset.tournament_type}</span>
                                         </div>
                                     </div>
                                     <p class="text-secondary">${formatDate(dataset.created_at)}</p>
@@ -169,11 +169,11 @@ function set_tag_as_query(tagName) {
     queryInput.dispatchEvent(new Event('input', {bubbles: true}));
 }
 
-function set_publication_type_as_query(publicationType) {
-    const publicationTypeSelect = document.getElementById('publication_type');
-    for (let i = 0; i < publicationTypeSelect.options.length; i++) {
-        if (publicationTypeSelect.options[i].text === publicationType.trim()) {
-            publicationTypeSelect.value = publicationTypeSelect.options[i].value;
+function set_tournament_type_as_query(tournamentType) {
+    const tournamentTypeSelect = document.getElementById('tournament_type');
+    for (let i = 0; i < tournamentTypeSelect.options.length; i++) {
+        if (tournamentTypeSelect.options[i].text === tournamentType.trim()) {
+            tournamentTypeSelect.value = tournamentTypeSelect.options[i].value;
             break;
         }
     }
@@ -190,8 +190,8 @@ function clearFilters() {
     let authorInput = document.querySelector('#filter_author');
     authorInput.value = "";
 
-    let publicationTypeSelect = document.querySelector('#publication_type');
-    publicationTypeSelect.value = "any";
+    let tournamentTypeSelect = document.querySelector('#tournament_type');
+    tournamentTypeSelect.value = "any";
 
     let sortingOptions = document.querySelectorAll('[name="sorting"]');
     sortingOptions.forEach(option => {

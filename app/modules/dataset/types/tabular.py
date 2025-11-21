@@ -6,6 +6,8 @@ extensions and provides a small preview (head rows) to render in templates.
 from typing import List, Dict, Any
 import csv
 import os
+import re
+
 
 from .base import BaseDataset
 
@@ -136,3 +138,150 @@ class TabularDataset(BaseDataset):
 
         # If no encoding worked, return a decode error
         return {"valid": False, "message": "Unable to decode file with tried encodings"}
+
+    def validate_padel_structure(self, file_path: str) -> Dict[str, Any]:
+        """Validate that the CSV has the specific structure for padel match datasets.
+
+        Returns:
+            {"valid": True} if structure is correct
+        or
+            {"valid": False, "errors": [...], "required_columns": [...]}
+        """
+        REQUIRED_COLUMNS = [
+            'nombre_torneo', 'anio_torneo', 'fecha_inicio_torneo', 'fecha_final_torneo',
+            'pista_principal', 'categoria', 'fase', 'ronda',
+            'pareja1_jugador1', 'pareja1_jugador2', 'pareja2_jugador1', 'pareja2_jugador2',
+            'set1_pareja1', 'set1_pareja2', 'set2_pareja1', 'set2_pareja2',
+            'set3_pareja1', 'set3_pareja2',
+            'pareja_ganadora', 'pareja_perdedora', 'resultado_string'
+        ]
+
+        VALID_CATEGORIES = [
+            'Masculino', 'Femenino', 'Mixed',
+            'masculino', 'femenino', 'mixed',
+            'Mixto', 'mixto'  # Spanish variant for Mixed
+        ]
+
+        if not os.path.exists(file_path):
+            return {"valid": False, "errors": ["File not found"], "required_columns": REQUIRED_COLUMNS}
+
+        errors = []
+
+        # First, detect encoding
+        encodings_to_try = ["utf-8", "utf-8-sig", "utf-16", "latin-1", "cp1252"]
+        encoding = "utf-8"
+        for enc in encodings_to_try:
+            try:
+                with open(file_path, "r", encoding=enc, newline="") as f:
+                    f.read(1024)
+                encoding = enc
+                break
+            except (UnicodeDecodeError, UnicodeError):
+                continue
+
+        try:
+            with open(file_path, "r", encoding=encoding, newline="") as f:
+                reader = csv.DictReader(f)
+                headers = reader.fieldnames
+
+                if not headers:
+                    return {
+                        "valid": False,
+                        "errors": ["CSV file has no headers"],
+                        "required_columns": REQUIRED_COLUMNS
+                    }
+
+                # Check for missing required columns
+                missing_columns = [col for col in REQUIRED_COLUMNS if col not in headers]
+                if missing_columns:
+                    errors.append(f"Missing required columns: {', '.join(missing_columns)}")
+
+                # Check for extra columns (warning, not error)
+                extra_columns = [col for col in headers if col not in REQUIRED_COLUMNS]
+                if extra_columns:
+                    errors.append(f"Warning: Extra columns found: {', '.join(extra_columns)}")
+
+                # Validate data in each row
+                row_number = 1
+                for row in reader:
+                    row_number += 1
+
+                    # Validate year is numeric
+                    if 'anio_torneo' in row and row['anio_torneo']:
+                        try:
+                            year = int(row['anio_torneo'])
+                            if year < 1900 or year > 2100:
+                                errors.append(
+                                    f"Row {row_number}: Invalid year '{year}' (must be between 1900-2100)"
+                                )
+                        except ValueError:
+                            errors.append(
+                                f"Row {row_number}: 'anio_torneo' must be numeric, got '{row['anio_torneo']}'"
+                            )
+
+                    # Validate dates format (DD.MM.YYYY)
+                    for date_field in ['fecha_inicio_torneo', 'fecha_final_torneo']:
+                        if date_field in row and row[date_field]:
+                            date_pattern = re.compile(r'^\d{2}\.\d{2}\.\d{4}$')
+                            if not date_pattern.match(row[date_field]):
+                                errors.append(
+                                    f"Row {row_number}: '{date_field}' must be in DD.MM.YYYY format, "
+                                    f"got '{row[date_field]}'"
+                                )
+
+                    # Validate category
+                    if 'categoria' in row and row['categoria']:
+                        if row['categoria'] not in VALID_CATEGORIES:
+                            errors.append(
+                                f"Row {row_number}: 'categoria' must be one of {VALID_CATEGORIES}, "
+                                f"got '{row['categoria']}'"
+                            )
+
+                    # Validate set scores are numeric (when present)
+                    set_fields = [
+                        'set1_pareja1', 'set1_pareja2', 'set2_pareja1', 'set2_pareja2',
+                        'set3_pareja1', 'set3_pareja2'
+                    ]
+                    for set_field in set_fields:
+                        if set_field in row and row[set_field]:
+                            try:
+                                score = int(row[set_field])
+                                if score < 0 or score > 99:
+                                    errors.append(
+                                        f"Row {row_number}: '{set_field}' score out of range, got {score}"
+                                    )
+                            except ValueError:
+                                errors.append(
+                                    f"Row {row_number}: '{set_field}' must be numeric, "
+                                    f"got '{row[set_field]}'"
+                                )
+
+                    # Validate that player names are not empty
+                    player_fields = [
+                        'pareja1_jugador1', 'pareja1_jugador2',
+                        'pareja2_jugador1', 'pareja2_jugador2'
+                    ]
+                    for player_field in player_fields:
+                        if player_field in row and not row[player_field]:
+                            errors.append(f"Row {row_number}: '{player_field}' cannot be empty")
+
+                    # Only show first 10 errors to avoid overwhelming output
+                    if len(errors) >= 10:
+                        errors.append("... (more errors may exist, showing first 10)")
+                        break
+
+        except Exception as e:
+            return {
+                "valid": False,
+                "errors": [f"Error reading CSV: {str(e)}"],
+                "required_columns": REQUIRED_COLUMNS
+            }
+
+        if errors:
+            return {
+                "valid": False,
+                "errors": errors,
+                "required_columns": REQUIRED_COLUMNS
+            }
+
+        return {"valid": True}

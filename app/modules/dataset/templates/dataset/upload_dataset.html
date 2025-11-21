@@ -70,8 +70,8 @@
 
                             <div class="col-lg-6 col-6">
                                 <div class="mb-3">
-                                    {{ form.publication_type.label(class="form-label") }}
-                                    {{ form.publication_type(class="form-control") }}
+                                    {{ form.tournament_type.label(class="form-label") }}
+                                    {{ form.tournament_type(class="form-select") }}
                                 </div>
 
                             </div>
@@ -407,26 +407,14 @@
                                                 </div>
                                                 <div class="col-lg-6 col-12">
                                                     <div class="mb-3">
-                                                        <label class="form-label" for="publication_type">Publication type</label>
-                                                        <select class="form-control" name="feature_models-${formUniqueId}-publication_type">
-                                                            <option value="none">None</option>
-                                                            <option value="annotationcollection">Annotation Collection</option>
-                                                            <option value="book">Book</option>
-                                                            <option value="section">Book Section</option>
-                                                            <option value="conferencepaper">Conference Paper</option>
-                                                            <option value="datamanagementplan">Data Management Plan</option>
-                                                            <option value="article">Journal Article</option>
-                                                            <option value="patent">Patent</option>
-                                                            <option value="preprint">Preprint</option>
-                                                            <option value="deliverable">Project Deliverable</option>
-                                                            <option value="milestone">Project Milestone</option>
-                                                            <option value="proposal">Proposal</option>
-                                                            <option value="report">Report</option>
-                                                            <option value="softwaredocumentation">Software Documentation</option>
-                                                            <option value="taxonomictreatment">Taxonomic Treatment</option>
-                                                            <option value="technicalnote">Technical Note</option>
-                                                            <option value="thesis">Thesis</option>
-                                                            <option value="workingpaper">Working Paper</option>
+                                                        <label class="form-label" for="tournament_type">Padel Tournament Type</label>
+                                                        <select class="form-select" name="feature_models-${formUniqueId}-tournament_type">
+                                                            <option value="">--</option>
+                                                            <option value="master_final">Master Final</option>
+                                                            <option value="master">Master</option>
+                                                            <option value="open">Open</option>
+                                                            <option value="qualifying">Qualifying</option>
+                                                            <option value="national_tours">National Tours</option>
                                                             <option value="other">Other</option>
                                                         </select>
                                                     </div>

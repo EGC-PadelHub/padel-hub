@@ -22,15 +22,19 @@ class ConfigManager:
 
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", secrets.token_bytes())
-    # SSL disabled for Filess.io compatibility (free tier has SSL certificate issues)
     SQLALCHEMY_DATABASE_URI = (
         f"mysql+pymysql://{os.getenv('MARIADB_USER', 'default_user')}:"
         f"{os.getenv('MARIADB_PASSWORD', 'default_password')}@"
         f"{os.getenv('MARIADB_HOSTNAME', 'localhost')}:"
         f"{os.getenv('MARIADB_PORT', '3306')}/"
         f"{os.getenv('MARIADB_DATABASE', 'default_db')}"
-        f"?ssl=false"
     )
+    # SSL disabled for Filess.io compatibility (free tier has SSL certificate issues)
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'connect_args': {
+            'ssl_disabled': True
+        }
+    }
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     TIMEZONE = "Europe/Madrid"
     TEMPLATES_AUTO_RELOAD = True
@@ -49,8 +53,12 @@ class TestingConfig(Config):
         f"{os.getenv('MARIADB_HOSTNAME', 'localhost')}:"
         f"{os.getenv('MARIADB_PORT', '3306')}/"
         f"{os.getenv('MARIADB_TEST_DATABASE', 'default_db')}"
-        f"?ssl=false"
     )
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'connect_args': {
+            'ssl_disabled': True
+        }
+    }
     WTF_CSRF_ENABLED = False
 
 

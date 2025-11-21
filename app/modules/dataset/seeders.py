@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from dotenv import load_dotenv
 
 from app.modules.auth.models import User
-from app.modules.dataset.models import Author, DataSet, DSMetaData, DSMetrics, PublicationType
+from app.modules.dataset.models import Author, DataSet, DSMetaData, DSMetrics, TournamentType
 from app.modules.featuremodel.models import FeatureModel, FMMetaData
 from app.modules.hubfile.models import Hubfile
 from core.seeders.BaseSeeder import BaseSeeder
@@ -33,7 +33,7 @@ class DataSetSeeder(BaseSeeder):
                 deposition_id=1 + i,
                 title=f"Sample dataset {i+1}",
                 description=f"Description for dataset {i+1}",
-                publication_type=PublicationType.DATA_MANAGEMENT_PLAN,
+                tournament_type=TournamentType.MASTER,
                 publication_doi=f"10.1234/dataset{i+1}",
                 dataset_doi=f"10.1234/dataset{i+1}",
                 tags="tag1, tag2",
@@ -72,7 +72,7 @@ class DataSetSeeder(BaseSeeder):
                 uvl_filename=f"file{i+1}.csv",
                 title=f"Feature Model {i+1}",
                 description=f"Description for feature model {i+1}",
-                publication_type=PublicationType.SOFTWARE_DOCUMENTATION,
+                tournament_type=TournamentType.OPEN,
                 publication_doi=f"10.1234/fm{i+1}",
                 tags="tag1, tag2",
                 uvl_version="1.0",

@@ -27,7 +27,8 @@ class ZenodoService(BaseService):
         # FAKENODO_URL (if set) or a sensible local default.
         force_fakenodo = os.getenv("UPLOADS_USE_FAKENODO_ONLY", "true").lower() in ("1", "true", "yes")
         fakenodo_url = os.getenv("FAKENODO_URL")
-        default_fakenodo = "http://127.0.0.1:5055/api/deposit/depositions"
+        # Updated in-process fakenodo default (no separate service required)
+        default_fakenodo = "http://127.0.0.1:5000/fakenodo/depositions"
 
         if force_fakenodo:
             return fakenodo_url or default_fakenodo
@@ -69,7 +70,7 @@ class ZenodoService(BaseService):
         self.headers = {"Content-Type": "application/json"}
         # Only include access_token param if we have a token AND we're not using fakenodo.
         # When using a local fakenodo we avoid sending access tokens.
-        fakenodo_candidates = [os.getenv("FAKENODO_URL"), "http://127.0.0.1:5055/api/deposit/depositions"]
+        fakenodo_candidates = [os.getenv("FAKENODO_URL"), "http://127.0.0.1:5000/fakenodo/depositions"]
         using_fakenodo = any(self.ZENODO_API_URL and cand and cand in self.ZENODO_API_URL for cand in fakenodo_candidates)
         if self.ZENODO_ACCESS_TOKEN and not using_fakenodo:
             self.params = {"access_token": self.ZENODO_ACCESS_TOKEN}

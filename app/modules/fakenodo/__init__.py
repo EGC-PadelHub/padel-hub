@@ -1,2 +1,7 @@
-# Make fakenodo a package and expose create_app for tests
-from .app import create_app  # noqa: F401
+"""Fakenodo module package.
+
+Deprecated standalone app removed. Expose the in-process blueprint for module
+registration. Tests only need the main Flask app plus this blueprint.
+"""
+
+from .routes import fakenodo_module  # noqa: F401

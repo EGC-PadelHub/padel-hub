@@ -1,0 +1,84 @@
+name: 🐛 Bug Report
+description: Reportar un error o bug encontrado
+title: "[BUG]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por reportar este bug. Por favor completa la siguiente información.
+  
+  - type: textarea
+    id: description
+    attributes:
+      label: Descripción del bug
+      description: Describe claramente qué está fallando
+      placeholder: El sistema no permite iniciar sesión cuando...
+    validations:
+      required: true
+  
+  - type: textarea
+    id: steps
+    attributes:
+      label: Pasos para reproducir
+      description: ¿Cómo podemos reproducir este error?
+      placeholder: |
+        1. Ir a '...'
+        2. Click en '...'
+        3. Ver error
+    validations:
+      required: true
+  
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportamiento esperado
+      description: ¿Qué debería ocurrir?
+      placeholder: Debería mostrar el dashboard del usuario
+    validations:
+      required: true
+  
+  - type: textarea
+    id: actual
+    attributes:
+      label: Comportamiento actual
+      description: ¿Qué ocurre realmente?
+      placeholder: Muestra un error 500
+    validations:
+      required: true
+  
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Prioridad
+      description: ¿Qué tan urgente es este bug?
+      options:
+        - 🔴 Alta - Bloquea funcionalidad crítica
+        - 🟡 Media - Afecta funcionalidad pero hay workaround
+        - 🟢 Baja - Error menor o cosmético
+    validations:
+      required: true
+  
+  - type: dropdown
+    id: type
+    attributes:
+      label: Tipo
+      description: ¿Este bug estaba planificado encontrarlo?
+      options:
+        - No planificada - Bug encontrado en uso normal
+        - Planificada - Bug detectado en testing/QA
+    validations:
+      required: true
+  
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Capturas de pantalla o logs
+      description: Si aplica, añade capturas o logs del error
+      placeholder: Arrastra imágenes aquí o pega logs
+  
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexto adicional
+      description: Cualquier información adicional relevante (navegador, versión, ambiente, etc.)

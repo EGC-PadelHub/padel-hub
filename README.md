@@ -124,10 +124,42 @@ pytest --cov=app
 
 Contributions are welcome! Please read our contributing guidelines before submitting pull requests.
 
+## � Documentation
+
+### Project Documentation
+
+- **[Contributing Guide](.github/CONTRIBUTING.md)** - Complete workflow for contributing to the project
+  - Issue templates and management
+  - Commit conventions (Conventional Commits)
+  - Branch strategy (main, trunk, bugfix, feature/*)
+  - Merge workflow and versioning
+  - Git hooks usage
+
+- **[Issue Templates](.github/ISSUE_TEMPLATE/)** - Standardized templates for:
+  - 🐛 Bug reports
+  - ✨ Feature requests
+  - 📚 Documentation improvements
+
+- **[Git Hooks](.githooks/)** - Automated validation
+  - commit-msg hook for enforcing commit conventions
+  - Installation and usage instructions
+
+### Getting Started
+
+1. Read the [Contributing Guide](.github/CONTRIBUTING.md)
+2. Install Git hooks: `cp .githooks/commit-msg .git/hooks/commit-msg && chmod +x .git/hooks/commit-msg`
+3. Configure commit template: `git config commit.template .gitmessage`
+4. Create an issue using our templates
+5. Follow the branch and commit workflow
+
+### Branch Strategy
+
+- **main** - Production code
+- **trunk** - Development integration
+- **bugfix** - Shared bug fixes
+- **feature/*** - New features (deleted after merge)
+- **document/*** - Documentation updates (deleted after merge)
+
 ## 📄 License
 
 This project is developed by DiversoLab / EGC-PadelHub.
-
-## Official documentation
-
-Full documentation will be available soon.

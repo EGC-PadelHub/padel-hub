@@ -1,0 +1,186 @@
+#!/bin/bash
+# Git hook para validar mensajes de commit y merge
+
+commit_msg_file=$1
+commit_msg=$(cat "$commit_msg_file")
+
+# Detectar si es un merge (método robusto)
+is_merge=false
+if git rev-parse --verify -q MERGE_HEAD > /dev/null 2>&1; then
+    is_merge=true
+elif grep -q "^Merge branch" "$commit_msg_file"; then
+    is_merge=true
+fi
+
+# Patrón básico: debe empezar con feat:, fix: o docs:
+pattern="^(feat|fix|docs): .+"
+
+if ! echo "$commit_msg" | grep -qE "$pattern"; then
+    echo "❌ ERROR: El mensaje no sigue el formato correcto."
+    echo ""
+    if [ "$is_merge" = true ]; then
+        echo "Los merges DEBEN tener mensaje personalizado con formato:"
+        echo "  feat: descripción #número"
+        echo "  fix: descripción. Closes #número"
+        echo "  docs: descripción #número"
+    else
+        echo "Formato requerido para commits:"
+        echo "  feat: título"
+        echo "  fix: título"
+        echo "  docs: título"
+    fi
+    echo ""
+    echo "Ejemplos válidos:"
+    if [ "$is_merge" = true ]; then
+        echo "  git merge bugfix -m \"fix: integra corrección de login #45\""
+        echo "  git merge feature/nombre -m \"feat: integra notificaciones. Closes #46\""
+        echo "  git merge feature/nombre -m \"docs: integra documentación #47\""
+    else
+        echo "  feat: añade sistema de notificaciones"
+        echo "  fix: corrige error de login"
+        echo "  docs: actualiza guía de contribución"
+    fi
+    echo ""
+    echo "Tu mensaje:"
+    echo "  $commit_msg"
+    echo ""
+    exit 1
+fi
+
+# VALIDACIÓN: Commits deben tener título + descripción (mínimo 3 líneas no vacías)
+if [ "$is_merge" = false ]; then
+    # Contar líneas no vacías y no comentadas
+    non_empty_lines=$(echo "$commit_msg" | grep -v "^#" | grep -v "^$" | wc -l)
+    
+    if [ "$non_empty_lines" -lt 2 ]; then
+        echo "❌ ERROR: El commit debe tener título Y descripción."
+        echo ""
+        echo "Formato requerido:"
+        echo "  Línea 1: feat: título (máx 50 caracteres)"
+        echo "  Línea 2: (vacía)"
+        echo "  Línea 3+: descripción detallada"
+        echo ""
+        echo "Ejemplo:"
+        echo "  feat: añade sistema de notificaciones"
+        echo ""
+        echo "  Se implementa porque los usuarios necesitan saber"
+        echo "  cuando hay nuevas actualizaciones en sus datasets."
+        echo ""
+        echo "💡 Usa 'git commit' (sin -m) para abrir el editor con la plantilla."
+        echo ""
+        exit 1
+    fi
+    
+    # Validar que haya una línea en blanco después del título
+    second_line=$(echo "$commit_msg" | sed -n '2p')
+    if [ -n "$second_line" ] && ! echo "$second_line" | grep -q "^#"; then
+        echo "❌ ERROR: Debe haber una línea en blanco después del título."
+        echo ""
+        echo "Formato correcto:"
+        echo "  feat: título"
+        echo "  <--- línea en blanco"
+        echo "  Descripción detallada..."
+        echo ""
+        exit 1
+    fi
+fi
+
+# VALIDACIÓN PARA MERGES: deben tener #número
+if [ "$is_merge" = true ]; then
+    # Obtener la rama actual
+    current_branch=$(git rev-parse --abbrev-ref HEAD)
+    
+    # Si estamos en main, es obligatorio usar Closes
+    if [ "$current_branch" = "main" ]; then
+        if ! echo "$commit_msg" | grep -qiE "(close|fix|resolve)(s|d)? #[0-9]+"; then
+            echo "❌ ERROR: Los merges a MAIN deben incluir 'Closes #número'."
+            echo ""
+            echo "Estás en la rama 'main', por lo que este merge cerrará la issue."
+            echo "Debes indicarlo explícitamente con 'Closes #número'."
+            echo ""
+            echo "Formato requerido:"
+            echo "  feat: descripción. Closes #número"
+            echo "  fix: descripción. Closes #número"
+            echo ""
+            echo "Ejemplos:"
+            echo "  git merge trunk -m \"feat: release notificaciones. Closes #46\""
+            echo "  git merge bugfix -m \"fix: release corrección. Closes #45\""
+            echo ""
+            echo "Tu mensaje:"
+            echo "  $commit_msg"
+            echo ""
+            exit 1
+        fi
+    else
+        # Para otras ramas (trunk, bugfix, etc.), solo requiere #número
+        if ! echo "$commit_msg" | grep -qE "#[0-9]+"; then
+            echo "❌ ERROR: Los merges deben incluir #número de la issue."
+            echo ""
+            echo "Formato requerido:"
+            echo "  feat: descripción #número"
+            echo "  fix: descripción #número"
+            echo ""
+            echo "Ejemplos:"
+            echo "  git merge bugfix -m \"fix: integra corrección #45\""
+            echo "  git merge feature/nombre -m \"feat: integra notificaciones #46\""
+            echo ""
+            echo "💡 NO uses 'Closes' aquí porque este merge no llegará a 'main' todavía."
+            echo ""
+            echo "Tu mensaje:"
+            echo "  $commit_msg"
+            echo ""
+            exit 1
+        fi
+        
+        # Advertir si usan Closes en ramas que no son main
+        if echo "$commit_msg" | grep -qiE "(close|fix|resolve)(s|d)? #[0-9]+"; then
+            echo "⚠️  ADVERTENCIA: Usaste 'Closes' en la rama '$current_branch'."
+            echo ""
+            echo "La issue NO se cerrará automáticamente porque no estás en 'main'."
+            echo "Solo se cierra cuando el commit llegue a la rama 'main'."
+            echo ""
+            echo "💡 Recomendación: Usa 'Closes' solo en merges a 'main'."
+            echo ""
+            echo "¿Continuar de todas formas? (Ctrl+C para cancelar)"
+            read -t 5 || true
+        fi
+    fi
+fi
+
+# VALIDACIÓN PARA COMMITS: NO deben tener #número ni Closes
+if [ "$is_merge" = false ]; then
+    # Filtrar solo líneas que NO son comentarios
+    commit_msg_no_comments=$(echo "$commit_msg" | grep -v "^#")
+    
+    if echo "$commit_msg_no_comments" | grep -qE "#[0-9]+"; then
+        echo "❌ ERROR: Los commits NO deben incluir #número."
+        echo ""
+        echo "El #número se pone en los MERGES, no en los commits."
+        echo ""
+        echo "Formato correcto para commits:"
+        echo "  feat: descripción"
+        echo "  fix: descripción"
+        echo ""
+        echo "Tu mensaje:"
+        echo "  $commit_msg_no_comments"
+        echo ""
+        exit 1
+    fi
+    
+    if echo "$commit_msg_no_comments" | grep -qiE "(close|fix|resolve)(s|d)? #"; then
+        echo "❌ ERROR: Los commits NO deben usar 'Closes/Fixes/Resolves'."
+        echo ""
+        echo "El cierre de issues se hace en los MERGES, no en los commits."
+        echo ""
+        echo "Formato correcto para commits:"
+        echo "  feat: descripción"
+        echo "  fix: descripción"
+        echo ""
+        echo "Tu mensaje:"
+        echo "  $commit_msg_no_comments"
+        echo ""
+        exit 1
+    fi
+fi
+
+exit 0

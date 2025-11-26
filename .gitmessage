@@ -13,6 +13,7 @@
 # Tipos permitidos:
 #   feat:     Nueva funcionalidad (aumenta versión MAJOR: 1.0.0 → 2.0.0)
 #   fix:      Corrección de bugs (aumenta versión MINOR: 1.0.0 → 1.1.0)
+#   docs:     Solo documentación (NO aumenta versión, sin deploy)
 #
 # COMMITS (sin #número):
 #   Los commits NO llevan #número ni Closes
@@ -25,6 +26,7 @@
 # Ejemplos de COMMITS:
 #   feat: add notification system
 #   fix: fix authentication error
+#   docs: update contribution guide
 #
 # Ejemplos de MERGES:
 #   git merge bugfix -m "fix: integrate fix #45"

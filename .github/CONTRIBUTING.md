@@ -24,12 +24,16 @@ Este sistema de issues y convenciones de commits se implementó el **25 de novie
 
 ## 🔄 Flujo de Trabajo
 
-Trabajamos con tres ramas principales:
+Trabajamos con ramas principales y ramas de trabajo:
 
+**Ramas Principales:**
 - **`main`**: Producción (solo código estable)
 - **`trunk`**: Desarrollo (integración de features y fixes)
 - **`bugfix`**: Corrección de errores
-- **`feature/*`**: Nuevas funcionalidades (se borran después del merge)
+
+**Ramas de Trabajo (se borran después del merge):**
+- **`feature/*`**: Nuevas funcionalidades
+- **`document/*`**: Cambios de documentación
 
 ---
 
@@ -41,12 +45,20 @@ Trabajamos con tres ramas principales:
 - **trunk**: Rama de desarrollo principal
 - **bugfix**: Rama compartida para corrección de bugs
 
-### Ramas de Trabajo
+### Ramas de Trabajo (se eliminan después del merge)
 
 - **feature/nombre-descriptivo**: Para nuevas funcionalidades
   - Ejemplo: `feature/notificaciones-email`
   - Ejemplo: `feature/sistema-reservas`
-  - **Importante**: Se eliminan después del merge a trunk
+  - Se crean desde `trunk`
+  - **Se eliminan después del merge a trunk**
+
+- **document/nombre-descriptivo**: Para cambios de documentación
+  - Ejemplo: `document/api-guide`
+  - Ejemplo: `document/contribution-update`
+  - Se crean desde `trunk`
+  - **Se eliminan después del merge a trunk**
+  - Usan commits tipo `docs:`
 
 ---
 
@@ -70,16 +82,25 @@ Usamos **Conventional Commits** para mantener un historial limpio y automatizar 
 Corrige un error en el código. **Aumenta la versión MINOR** (1.0.0 → 1.1.0).
 
 ```bash
-git commit -m "fix: corrige error de autenticación con Gmail #45"
-git commit -m "fix: soluciona fuga de memoria en upload de archivos"
+fix: fix Gmail authentication error
+fix: fix memory leak in file upload
 ```
 
 #### `feat:` - Nuevas Funcionalidades
 Añade nueva funcionalidad. **Aumenta la versión MAJOR** (1.0.0 → 2.0.0).
 
 ```bash
-git commit -m "feat: añade sistema de notificaciones por email #46"
-git commit -m "feat: implementa búsqueda avanzada de partidos"
+feat: add email notification system
+feat: implement advanced match search
+```
+
+#### `docs:` - Documentación
+Cambios solo en documentación. **NO aumenta la versión** (sin deploy).
+
+```bash
+docs: update contribution guide
+docs: add API documentation examples
+docs: fix typos in README
 ```
 
 ### Commits y Merges
@@ -349,6 +370,81 @@ La issue #46 se cerró automáticamente en el merge a main (porque usaste `Close
 
 ---
 
+## 📚 Cambios de Documentación
+
+Para cambios que **solo afectan documentación** (sin código):
+
+### 1. Crear Issue
+
+1. Ve a [Issues](../../issues)
+2. Click en "New Issue"
+3. Selecciona **"📚 Documentation"**
+4. Completa el formulario con:
+   - Descripción del problema/mejora de documentación
+   - Tipo de documentación (README, API, Contributing, etc.)
+   - Cambios propuestos
+   - Prioridad (Alta/Media/Baja)
+5. Crea la issue (ej: #47)
+
+### 2. Crear Rama document/
+
+```bash
+# Crear rama desde trunk
+git checkout trunk
+git pull origin trunk
+git checkout -b document/nombre-descriptivo
+
+# Ejemplo:
+git checkout -b document/api-guide
+git checkout -b document/contribution-update
+```
+
+### 3. Hacer Commits (tipo docs:)
+
+```bash
+# Editar documentación
+# ... editar README.md, CONTRIBUTING.md, etc ...
+
+# Commitear con docs: (sin #número)
+git commit
+# En el editor:
+docs: update API documentation
+
+Adds detailed examples for all endpoints, including
+request/response formats and error codes.
+```
+
+### 4. Merge a trunk (sin versión, sin deploy)
+
+```bash
+# Merge a trunk (con #número si hay issue)
+git checkout trunk
+git pull origin trunk
+git merge document/api-guide -m "docs: integrate API documentation #47"
+git push origin trunk
+
+# Eliminar la rama document
+git branch -d document/api-guide
+git push origin --delete document/api-guide
+```
+
+### 5. Merge a main (sin versión, sin deploy)
+
+```bash
+# Merge a main (CON Closes si hay issue)
+git checkout main
+git pull origin main
+git merge trunk -m "docs: release API documentation. Closes #47"
+git push origin main
+# ✅ Issue #47 se cierra
+# ⚠️ NO se crea tag
+# ⚠️ NO se hace deploy
+```
+
+**Importante**: Los commits `docs:` NO activan el workflow de deploy, solo actualizan la documentación en GitHub.
+
+---
+
 ## 🏷️ Versionado
 
 Seguimos **Semantic Versioning** (MAJOR.MINOR.PATCH) con nuestra convención específica:
@@ -364,6 +460,12 @@ Se incrementa con commits tipo `fix:`
 ### Versión MAJOR (2.0.0)
 Se incrementa con commits tipo `feat:`
 - Nuevas funcionalidades
+
+### Sin Versión
+Los commits tipo `docs:` **NO incrementan versión**
+- Solo cambios de documentación
+- No se crea tag
+- No se hace deploy a producción
 - Mejoras importantes
 
 **Ejemplo**: `1.0.0` → `2.0.0`

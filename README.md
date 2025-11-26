@@ -138,6 +138,7 @@ Contributions are welcome! Please read our contributing guidelines before submit
 - **[Issue Templates](.github/ISSUE_TEMPLATE/)** - Standardized templates for:
   - 🐛 Bug reports
   - ✨ Feature requests
+  - 📚 Documentation improvements
 
 - **[Git Hooks](.githooks/)** - Automated validation
   - commit-msg hook for enforcing commit conventions
@@ -150,6 +151,14 @@ Contributions are welcome! Please read our contributing guidelines before submit
 3. Configure commit template: `git config commit.template .gitmessage`
 4. Create an issue using our templates
 5. Follow the branch and commit workflow
+
+### Branch Strategy
+
+- **main** - Production code
+- **trunk** - Development integration
+- **bugfix** - Shared bug fixes
+- **feature/*** - New features (deleted after merge)
+- **document/*** - Documentation updates (deleted after merge)
 
 ## 📄 License
 

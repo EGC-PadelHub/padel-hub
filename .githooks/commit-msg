@@ -12,8 +12,8 @@ elif grep -q "^Merge branch" "$commit_msg_file"; then
     is_merge=true
 fi
 
-# Patrón básico: debe empezar con feat: o fix:
-pattern="^(feat|fix): .+"
+# Patrón básico: debe empezar con feat:, fix: o docs:
+pattern="^(feat|fix|docs): .+"
 
 if ! echo "$commit_msg" | grep -qE "$pattern"; then
     echo "❌ ERROR: El mensaje no sigue el formato correcto."
@@ -22,19 +22,23 @@ if ! echo "$commit_msg" | grep -qE "$pattern"; then
         echo "Los merges DEBEN tener mensaje personalizado con formato:"
         echo "  feat: descripción #número"
         echo "  fix: descripción. Closes #número"
+        echo "  docs: descripción #número"
     else
         echo "Formato requerido para commits:"
         echo "  feat: título"
         echo "  fix: título"
+        echo "  docs: título"
     fi
     echo ""
     echo "Ejemplos válidos:"
     if [ "$is_merge" = true ]; then
         echo "  git merge bugfix -m \"fix: integra corrección de login #45\""
         echo "  git merge feature/nombre -m \"feat: integra notificaciones. Closes #46\""
+        echo "  git merge feature/nombre -m \"docs: integra documentación #47\""
     else
         echo "  feat: añade sistema de notificaciones"
         echo "  fix: corrige error de login"
+        echo "  docs: actualiza guía de contribución"
     fi
     echo ""
     echo "Tu mensaje:"

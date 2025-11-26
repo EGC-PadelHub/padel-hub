@@ -1,0 +1,39 @@
+name: 📚 Documentation
+description: Suggest improvements or report issues with documentation
+title: "[DOCS]: "
+labels: ["documentation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve our documentation! Please provide details about the documentation change needed.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Documentation Issue
+      description: What documentation needs to be added, updated, or fixed?
+      placeholder: |
+        Example:
+        - Missing API endpoint documentation for /datasets
+        - README installation steps are outdated
+        - Typos in contribution guide
+    validations:
+      required: true
+
+  - type: dropdown
+    id: doc-type
+    attributes:
+      label: Documentation Type
+      description: What type of documentation is this about?
+      options:
+        - README
+        - API Documentation
+        - Contributing Guide
+        - Code Comments
+        - Installation Guide
+        - User Guide
+        - Other
+      default: 0
+    validations:
+      required: true

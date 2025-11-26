@@ -1,0 +1,39 @@
+# <tipo>: <título del cambio (máx 50 caracteres)>
+# |<----  Usar máximo 50 caracteres  ---->|
+
+
+# ¿Por qué es necesario este cambio?
+# |<----   Intenta limitar cada línea a un máximo de 72 caracteres   ---->|
+
+
+# ¿Qué hace exactamente este commit?
+# |<----   Intenta limitar cada línea a un máximo de 72 caracteres   ---->|
+
+# --- COMMIT END ---
+# Tipos permitidos:
+#   feat:     Nueva funcionalidad (aumenta versión MAJOR: 1.0.0 → 2.0.0)
+#   fix:      Corrección de bugs (aumenta versión MINOR: 1.0.0 → 1.1.0)
+#
+# COMMITS (sin #número):
+#   Los commits NO llevan #número ni Closes
+#   Solo: feat: descripción  o  fix: descripción
+#
+# MERGES (con #número obligatorio):
+#   Los merges SIEMPRE llevan #número
+#   Opcionalmente Closes #número para cerrar la issue
+#
+# Ejemplos de COMMITS:
+#   feat: add notification system
+#   fix: fix authentication error
+#
+# Ejemplos de MERGES:
+#   git merge bugfix -m "fix: integrate fix #45"
+#   git merge bugfix -m "fix: integrate fix. Closes #45"
+#   git merge feature/name -m "feat: integrate feature. Closes #46"
+#
+# Recuerda:
+# - Commits: solo tipo y descripción (sin #)
+# - Merges: tipo, descripción + #número (Closes opcional)
+# - Primera línea: resumen breve
+# - Dejar línea en blanco
+# - Luego explicación detallada (opcional)

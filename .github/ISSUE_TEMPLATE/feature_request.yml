@@ -1,0 +1,50 @@
+name: ✨ Feature Request
+description: Solicitar una nueva funcionalidad
+title: "[FEATURE]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por proponer esta nueva funcionalidad. Por favor completa la siguiente información.
+  
+  - type: textarea
+    id: description
+    attributes:
+      label: Descripción de la funcionalidad
+      description: Describe claramente qué funcionalidad quieres añadir
+      placeholder: Añadir sistema de notificaciones por email que permita...
+    validations:
+      required: true
+  
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Propuesta de solución
+      description: ¿Cómo sugieres implementar esta funcionalidad?
+      placeholder: Se podría crear un servicio de email usando SendGrid que...
+    validations:
+      required: true
+  
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Prioridad
+      description: ¿Qué tan importante es esta funcionalidad?
+      options:
+        - 🔴 Alta - Necesaria para el próximo release
+        - 🟡 Media - Importante pero no urgente
+        - 🟢 Baja - Nice to have
+    validations:
+      required: true
+  
+  - type: dropdown
+    id: type
+    attributes:
+      label: Tipo
+      description: ¿Esta funcionalidad estaba planificada?
+      options:
+        - Planificada - Ya estaba en el roadmap/backlog
+        - No planificada - Sugerencia nueva
+    validations:
+      required: true

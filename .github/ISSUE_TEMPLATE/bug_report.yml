@@ -1,5 +1,5 @@
 name: 🐛 Bug Report
-description: Reportar un error o bug encontrado
+description: Report a bug or issue found
 title: "[BUG]: "
 labels: ["bug"]
 body:

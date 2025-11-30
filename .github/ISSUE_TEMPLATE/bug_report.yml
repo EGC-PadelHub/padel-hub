@@ -6,79 +6,94 @@ body:
   - type: markdown
     attributes:
       value: |
-        Gracias por reportar este bug. Por favor completa la siguiente información.
+        Thanks for reporting a bug. Please fill out the following information to help us address the issue.
   
   - type: textarea
     id: description
     attributes:
-      label: Descripción del bug
-      description: Describe claramente qué está fallando
-      placeholder: El sistema no permite iniciar sesión cuando...
+      label: Bug Description
+      description: Describe what the bug is.
+      placeholder: The system does not allow login when...
     validations:
       required: true
   
   - type: textarea
     id: steps
     attributes:
-      label: Pasos para reproducir
-      description: ¿Cómo podemos reproducir este error?
+      label: Steps to reproduce
+      description: How can we reproduce this bug?
       placeholder: |
-        1. Ir a '...'
-        2. Click en '...'
-        3. Ver error
+        1. Go to '...'
+        2. Click in '...'
+        3. See error
     validations:
       required: true
   
   - type: textarea
     id: expected
     attributes:
-      label: Comportamiento esperado
-      description: ¿Qué debería ocurrir?
-      placeholder: Debería mostrar el dashboard del usuario
+      label: Expected Behavior
+      description: What should happen?
+      placeholder: Should show the user dashboard
     validations:
       required: true
   
   - type: textarea
     id: actual
     attributes:
-      label: Comportamiento actual
-      description: ¿Qué ocurre realmente?
-      placeholder: Muestra un error 500
+      label: Actual Behavior
+      description: What actually happens?
+      placeholder: Shows a 500 error
     validations:
       required: true
   
   - type: dropdown
     id: priority
     attributes:
-      label: Prioridad
-      description: ¿Qué tan urgente es este bug?
+      label: Priority
+      description: How urgent is this bug?
       options:
-        - 🔴 Alta - Bloquea funcionalidad crítica
-        - 🟡 Media - Afecta funcionalidad pero hay workaround
-        - 🟢 Baja - Error menor o cosmético
+        - 🔴 High - Blocks critical functionality
+        - 🟡 Medium - Affects functionality but has a workaround
+        - 🟢 Low - Minor or cosmetic issue
     validations:
       required: true
   
   - type: dropdown
     id: type
     attributes:
-      label: Tipo
-      description: ¿Este bug estaba planificado encontrarlo?
+      label: Type
+      description: Was this bug expected to be found?
       options:
-        - No planificada - Bug encontrado en uso normal
-        - Planificada - Bug detectado en testing/QA
+        - Unplanned - Bug found during normal use
+        - Planned - Bug detected during testing/QA
     validations:
       required: true
   
   - type: textarea
     id: screenshots
     attributes:
-      label: Capturas de pantalla o logs
-      description: Si aplica, añade capturas o logs del error
-      placeholder: Arrastra imágenes aquí o pega logs
-  
+      label: Screenshots or logs
+      description: If applicable, add screenshots or logs of the error
+      placeholder: Drag images here or paste logs
+
   - type: textarea
     id: context
     attributes:
-      label: Contexto adicional
-      description: Cualquier información adicional relevante (navegador, versión, ambiente, etc.)
+      label: Additional Context
+      description: Any other relevant information (browser, version, environment, etc.)
+
+  - type: dropdown
+    id: assignees
+    attributes:
+      label: Assignees
+      description: Select who should work on this task (you can select multiple).
+      multiple: true
+      options:
+        - javpalgon
+        - celdorrui
+        - darzafrui
+        - jossilguz
+        - Glinbor10
+    validations:
+      required: true 

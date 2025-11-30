@@ -37,3 +37,18 @@ body:
       default: 0
     validations:
       required: true
+
+  - type: dropdown
+    id: assignees
+    attributes:
+      label: Assignees
+      description: Select who should work on this task (you can select multiple).
+      multiple: true
+      options:
+        - javpalgon
+        - celdorrui
+        - darzafrui
+        - jossilguz
+        - Glinbor10
+    validations:
+      required: true 

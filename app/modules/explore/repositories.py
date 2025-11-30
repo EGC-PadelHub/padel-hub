@@ -25,7 +25,7 @@ class ExploreRepository(BaseRepository):
         datasets = self._apply_author_filter(datasets, kwargs.get("author", ""))
         # datasets = self._apply_description_filter(datasets, kwargs.get("description", ""))
         # datasets = self._apply_tags_filter(datasets, tags)
-        # datasets = self._apply_tournament_type_filter(datasets, tournament_type)
+        datasets = self._apply_tournament_type_filter(datasets, tournament_type)
         # datasets = self._apply_sorting(datasets, sorting)
 
         return datasets.distinct().all()

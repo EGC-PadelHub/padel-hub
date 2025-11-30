@@ -24,7 +24,7 @@ def populated_db(clean_database):
             dataset_doi="10.001"
         )
         meta2 = DSMetaData(
-            title="Tenis Dataset 2",
+            title="Padel Dataset 2",
             description="Datos de Darío",
             authors=[author_dario],
             tournament_type=TournamentType.OPEN,
@@ -52,11 +52,11 @@ def populated_db(clean_database):
             tournament_type=TournamentType.MASTER
         )
         fm_meta2 = FMMetaData(
-            title="FM Meta 2", description="FM de Tenis", uvl_filename="fm_tenis.uvl",
+            title="FM Meta 2", description="FM de Padel 2", uvl_filename="fm_padel_2.uvl",
             tournament_type=TournamentType.OPEN
         )
         fm_meta3 = FMMetaData(
-            title="FM Meta 3", description="FM de Padel 2", uvl_filename="fm_padel_2.uvl",
+            title="FM Meta 3", description="FM de Padel 3", uvl_filename="fm_padel_3.uvl",
             tournament_type=TournamentType.QUALIFYING
         )
 
@@ -81,10 +81,13 @@ def populated_db(clean_database):
 
 def test_explore_filter_by_title_single_word_match(populated_db):
     repository = ExploreRepository()
-    results = repository.filter(title="Tenis")
+    results = repository.filter(title="Padel")
 
-    assert len(results) == 1
-    assert results[0].ds_meta_data.title == "Tenis Dataset 2"
+    assert len(results) == 3
+    titles = {r.ds_meta_data.title for r in results}
+    assert "Padel Dataset 1 (Pádel)" in titles
+    assert "Padel Dataset 2" in titles
+    assert "Padel, con comas." in titles
 
 
 def test_explore_filter_by_title_multi_word_match_and(populated_db):
@@ -99,10 +102,11 @@ def test_explore_filter_by_title_multiple_matches(populated_db):
     repository = ExploreRepository()
     results = repository.filter(title="Padel")
 
-    assert len(results) == 2
+    assert len(results) == 3
     titles = {r.ds_meta_data.title for r in results}
     assert "Padel Dataset 1 (Pádel)" in titles
     assert "Padel, con comas." in titles
+    assert "Padel Dataset 2" in titles
 
 
 def test_explore_filter_by_title_no_match(populated_db):
@@ -114,10 +118,9 @@ def test_explore_filter_by_title_no_match(populated_db):
 
 def test_explore_filter_by_title_case_insensitive(populated_db):
     repository = ExploreRepository()
-    results = repository.filter(title="tenis dataset")  # en minúsculas
+    results = repository.filter(title="padel dataset")  # en minúsculas
 
-    assert len(results) == 1
-    assert results[0].ds_meta_data.title == "Tenis Dataset 2"
+    assert len(results) == 2
 
 
 def test_explore_filter_by_title_empty_string_returns_all(populated_db):
@@ -144,7 +147,7 @@ def test_explore_filter_by_author_dario_case_insensitive(populated_db):
     results = repository.filter(author="darío")
     assert len(results) == 1
     titles = {r.ds_meta_data.title for r in results}
-    assert "Tenis Dataset 2" in titles
+    assert "Padel Dataset 2" in titles
 
 
 def test_explore_filter_by_author_no_match(populated_db):
@@ -159,3 +162,37 @@ def test_explore_filter_by_author_and_title_combined(populated_db):
 
     assert len(results) == 1
     assert results[0].ds_meta_data.title == "Padel Dataset 1 (Pádel)"
+
+
+# ---------------------------------POR TIPO DE TORNEO------------------------------------------
+
+def test_explore_filter_by_tournament_type_master(populated_db):
+    repository = ExploreRepository()
+    results = repository.filter(tournament_type="master")
+
+    assert len(results) == 1
+    titles = {r.ds_meta_data.title for r in results}
+    assert "Padel Dataset 1 (Pádel)" in titles
+
+
+def test_explore_filter_by_tournament_type_open(populated_db):
+    repository = ExploreRepository()
+    results = repository.filter(tournament_type="open")
+
+    assert len(results) == 1
+    titles = {r.ds_meta_data.title for r in results}
+    assert "Padel Dataset 2" in titles
+
+def test_explore_filter_by_tournament_type_qualifying(populated_db):
+    repository = ExploreRepository()
+    results = repository.filter(tournament_type="qualifying")
+
+    assert len(results) == 1
+    titles = {r.ds_meta_data.title for r in results}
+    assert "Padel, con comas." in titles
+
+def test_explore_filter_by_tournament_type_any(populated_db):
+    repository = ExploreRepository()
+    results = repository.filter(tournament_type="any")
+
+    assert len(results) == 3

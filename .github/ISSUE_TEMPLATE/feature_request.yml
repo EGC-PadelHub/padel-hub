@@ -6,45 +6,60 @@ body:
   - type: markdown
     attributes:
       value: |
-        Gracias por proponer esta nueva funcionalidad. Por favor completa la siguiente información.
+        Thank you for taking the time to suggest a new feature! Please fill out the following template to help us understand your request better.
   
   - type: textarea
     id: description
     attributes:
-      label: Descripción de la funcionalidad
-      description: Describe claramente qué funcionalidad quieres añadir
-      placeholder: Añadir sistema de notificaciones por email que permita...
+      label: Feature Description
+      description: Describe the feature you would like to see implemented.
+      placeholder: English: I would like to have a dark mode option in the settings.
     validations:
       required: true
   
   - type: textarea
     id: proposal
     attributes:
-      label: Propuesta de solución
-      description: ¿Cómo sugieres implementar esta funcionalidad?
-      placeholder: Se podría crear un servicio de email usando SendGrid que...
+      label: Proposed Solution
+      description: How do you suggest implementing this feature?
+      placeholder: We could create an email service using SendGrid that ...
     validations:
       required: true
   
   - type: dropdown
     id: priority
     attributes:
-      label: Prioridad
-      description: ¿Qué tan importante es esta funcionalidad?
+      label: Priority
+      description: How important is this feature?
       options:
-        - 🔴 Alta - Necesaria para el próximo release
-        - 🟡 Media - Importante pero no urgente
-        - 🟢 Baja - Nice to have
+        - 🔴 High - Essential for the next release
+        - 🟡 Medium - Important but not urgent
+        - 🟢 Low - Nice to have
     validations:
       required: true
   
   - type: dropdown
     id: type
     attributes:
-      label: Tipo
-      description: ¿Esta funcionalidad estaba planificada?
+      label: Type
+      description: Was this feature planned?
       options:
-        - Planificada - Ya estaba en el roadmap/backlog
-        - No planificada - Sugerencia nueva
+        - Planned - Already on the roadmap/backlog
+        - Unplanned - New suggestion
     validations:
       required: true
+
+  - type: dropdown
+    id: assignees
+    attributes:
+      label: Assignees
+      description: Select who should work on this task (you can select multiple).
+      multiple: true
+      options:
+        - javpalgon
+        - celdorrui
+        - darzafrui
+        - jossilguz
+        - Glinbor10
+    validations:
+      required: true 

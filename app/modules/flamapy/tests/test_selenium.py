@@ -30,7 +30,3 @@ def test_flamapy_index():
 
         # Close the browser
         close_driver(driver)
-
-
-# Call the test function
-test_flamapy_index()

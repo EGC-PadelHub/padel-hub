@@ -4,7 +4,7 @@ import tempfile
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
 import datetime
 import pathlib
@@ -66,6 +66,10 @@ def test_upload_dataset():
         desc_field.send_keys("Description")
         tags_field = driver.find_element(By.NAME, "tags")
         tags_field.send_keys("tag1,tag2")
+        
+        # Select tournament type (required field)
+        tournament_type_field = Select(driver.find_element(By.NAME, "tournament_type"))
+        tournament_type_field.select_by_value("master")
 
         # Add two authors and fill
         add_author_button = driver.find_element(By.ID, "add_author")
@@ -87,8 +91,8 @@ def test_upload_dataset():
         affiliation_field1.send_keys("Club1")
 
         # Obtén las rutas absolutas de los archivos
-        file1_path = os.path.abspath("app/modules/dataset/csv_examples/file1.csv")
-        file2_path = os.path.abspath("app/modules/dataset/csv_examples/file2.csv")
+        file1_path = os.path.abspath("app/modules/dataset/padel_csv_examples/file1.csv")
+        file2_path = os.path.abspath("app/modules/dataset/padel_csv_examples/file2.csv")
 
         # Subir el primer archivo
         dropzone = driver.find_element(By.CLASS_NAME, "dz-hidden-input")
@@ -117,12 +121,48 @@ def test_upload_dataset():
         check.send_keys(Keys.SPACE)
         wait_for_page_to_load(driver)
 
+        # Take screenshot before submitting
+        print("About to submit form...")
+        
         upload_btn = driver.find_element(By.ID, "upload_button")
-        upload_btn.send_keys(Keys.RETURN)
-        wait_for_page_to_load(driver)
-        time.sleep(2)  # Force wait time
+        upload_btn.click()
+        
+        # Wait a bit to see if there are validation errors
+        time.sleep(3)
+        
+        # Check for validation errors
+        try:
+            error_elements = driver.find_elements(By.CLASS_NAME, "invalid-feedback")
+            if error_elements:
+                print("Validation errors found:")
+                for error in error_elements:
+                    if error.is_displayed():
+                        print(f"  - {error.text}")
+        except Exception:
+            pass
+        
+        # Try to wait for redirect
+        try:
+            WebDriverWait(driver, 10).until(
+                EC.url_contains("/dataset/list")
+            )
+            wait_for_page_to_load(driver)
+        except Exception as e:
+            print(f"Failed to redirect. Current URL: {driver.current_url}")
+            print(f"Page title: {driver.title}")
+            # Print any alert messages
+            try:
+                alerts = driver.find_elements(By.CLASS_NAME, "alert")
+                if alerts:
+                    print("Alerts found:")
+                    for alert in alerts:
+                        if alert.is_displayed():
+                            print(f"  - {alert.text}")
+            except Exception:
+                pass
+            raise
 
-        assert driver.current_url == f"{host}/dataset/list", "Test failed!"
+        assert driver.current_url == f"{host}/dataset/list", f"Expected redirect to {host}/dataset/list but got {driver.current_url}"
 
         # Count final datasets
         final_datasets = count_datasets(driver, host)
@@ -134,10 +174,6 @@ def test_upload_dataset():
 
         # Close the browser
         close_driver(driver)
-
-
-# Call the test function
-test_upload_dataset()
 
 
 def test_upload_modal_and_error_badge():
@@ -161,8 +197,11 @@ def test_upload_modal_and_error_badge():
         # go to upload page
         driver.get(f"{host}/dataset/upload")
 
-        # create temp csv with unbalanced quotes
-        fd, tmp_path = tempfile.mkstemp(suffix=".csv")
+        # create temp csv with unbalanced quotes in home directory
+        # (Firefox snap cannot access /tmp)
+        tmp_dir = os.path.expanduser("~/snap/firefox/common/tmp")
+        os.makedirs(tmp_dir, exist_ok=True)
+        fd, tmp_path = tempfile.mkstemp(suffix=".csv", dir=tmp_dir)
         os.close(fd)
         content = (
             "r13,m,13\n"
@@ -216,7 +255,3 @@ def test_upload_modal_and_error_badge():
             pass
         if tmp_path and os.path.exists(tmp_path):
             os.remove(tmp_path)
-
-
-# Run the additional modal test as part of the same invocation so Rosemary picks it up
-test_upload_modal_and_error_badge()

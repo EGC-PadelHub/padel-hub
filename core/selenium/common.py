@@ -49,12 +49,25 @@ def initialize_driver():
     # --- Local mode ---
     if driver_name == "chrome":
         options = webdriver.ChromeOptions()
-        service = ChromeService(ChromeDriverManager().install())
+        try:
+            service = ChromeService(ChromeDriverManager().install())
+        except Exception as e:
+            # Fallback: try using system chromedriver
+            print(f"Warning: Could not download chromedriver ({e}). Trying system driver...")
+            service = ChromeService()
         driver = webdriver.Chrome(service=service, options=options)
 
     elif driver_name == "firefox":
         options = webdriver.FirefoxOptions()
-        service = FirefoxService(GeckoDriverManager().install())
+        # Set Firefox binary location explicitly for snap installations
+        options.binary_location = "/snap/firefox/current/usr/lib/firefox/firefox"
+        
+        try:
+            service = FirefoxService(GeckoDriverManager().install())
+        except Exception as e:
+            # Fallback: try using system geckodriver
+            print(f"Warning: Could not download geckodriver ({e}). Trying system driver...")
+            service = FirefoxService("/snap/bin/geckodriver")
         driver = webdriver.Firefox(service=service, options=options)
 
     else:

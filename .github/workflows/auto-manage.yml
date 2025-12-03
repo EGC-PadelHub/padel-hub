@@ -1,4 +1,4 @@
-name: Auto Assign and Add to Project
+name: Auto Assign, Add to Project and Label Priority
 
 on:
   issues:
@@ -11,15 +11,13 @@ jobs:
       issues: write
       repository-projects: write
     steps:
-      - name: Assign Users and Add to Project
+      - name: Manager (Assign, Project & Labels)
         uses: actions/github-script@v7
         with:
           script: |
             const body = context.payload.issue.body;
             if (!body) return;
 
-            // 1. ASSIGNEES (Multi-select)
-            // Looks for: ### Assignees
             const assigneesRegex = /### Assignees\s*\n\s*([\s\S]*?)(?=\n###|$)/;
             const assigneesMatch = body.match(assigneesRegex);
             
@@ -41,21 +39,15 @@ jobs:
               }
             }
 
-            // 2. AUTO ADD TO PROJECT (Classic)
-            // Define here the EXACT name of your project board
             const PROJECT_NAME = "padel-hub Board"; 
 
             try {
-              // List repo projects
               const projects = await github.rest.projects.listForRepo({
                 owner: context.repo.owner,
                 repo: context.repo.repo
               });
-              
               const project = projects.data.find(p => p.name === PROJECT_NAME);
-              
               if (project) {
-                // Get first column (e.g. "To Do")
                 const columns = await github.rest.projects.listColumns({ project_id: project.id });
                 if (columns.data.length > 0) {
                   try {
@@ -65,11 +57,33 @@ jobs:
                       content_type: 'Issue'
                     });
                     console.log(`✅ Added to project: ${PROJECT_NAME}`);
-                  } catch (createError) {
-                     console.log(`ℹ️ Card creation note: ${createError.message}`);
-                  }
+                  } catch (createError) { console.log(`ℹ️ Card note: ${createError.message}`); }
                 }
-              } else {
-                console.log(`⚠️ Project "${PROJECT_NAME}" not found.`);
               }
             } catch (e) { console.log(`❌ Error managing project: ${e.message}`); }
+
+            // Busca la sección "### Priority" y lee lo que hay debajo
+            const priorityRegex = /### Priority\s*\n\s*([^\n]*)/;
+            const priorityMatch = body.match(priorityRegex);
+
+            if (priorityMatch && priorityMatch[1]) {
+              const selectedOption = priorityMatch[1].trim();
+              let labelToAdd = '';
+
+              // Detecta qué eligió el usuario (buscando palabras clave por si cambias los emojis)
+              if (selectedOption.includes('High')) labelToAdd = 'priority: high';
+              else if (selectedOption.includes('Medium')) labelToAdd = 'priority: medium';
+              else if (selectedOption.includes('Low')) labelToAdd = 'priority: low';
+
+              if (labelToAdd) {
+                try {
+                  await github.rest.issues.addLabels({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: context.issue.number,
+                    labels: [labelToAdd]
+                  });
+                  console.log(`✅ Added label: ${labelToAdd}`);
+                } catch (e) { console.log(`❌ Error adding label: ${e.message}`); }
+              }
+            }

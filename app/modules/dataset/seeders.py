@@ -1,6 +1,6 @@
 import os
 import shutil
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from dotenv import load_dotenv
 
@@ -28,6 +28,7 @@ class DataSetSeeder(BaseSeeder):
         seeded_ds_metrics = self.seed([ds_metrics])[0]
 
         # Create DSMetaData instances
+        tags_list = ["fast-court, indoor", "slow-court, outdoor", "fast-court, outdoor", "slow-court, indoor"]
         ds_meta_data_list = [
             DSMetaData(
                 deposition_id=1 + i,
@@ -36,7 +37,7 @@ class DataSetSeeder(BaseSeeder):
                 tournament_type=TournamentType.MASTER,
                 publication_doi=f"10.1234/dataset{i+1}",
                 dataset_doi=f"10.1234/dataset{i+1}",
-                tags="tag1, tag2",
+                tags=tags_list[i],
                 ds_metrics_id=seeded_ds_metrics.id,
             )
             for i in range(4)
@@ -60,7 +61,7 @@ class DataSetSeeder(BaseSeeder):
             DataSet(
                 user_id=user1.id if i % 2 == 0 else user2.id,
                 ds_meta_data_id=seeded_ds_meta_data[i].id,
-                created_at=datetime.now(timezone.utc),
+                created_at=datetime.now(timezone.utc) - timedelta(days=i),
             )
             for i in range(4)
         ]

@@ -57,6 +57,16 @@
                                 <input type="text" class="form-control" name="author" id="filter_author" placeholder="Search by author...">
                             </div>
 
+                            <div class="mb-3">
+                                <label class="form-label" for="filter_description">Search by description</label>
+                                <input type="text" class="form-control" name="description" id="filter_description" placeholder="Search by description...">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label" for="filter_tags">Search by tags</label>
+                                <input type="text" class="form-control" name="tags" id="filter_tags" placeholder="Search by tags (comma separated)...">
+                            </div>
+
                         </div>
 
                     </div>
@@ -64,8 +74,8 @@
                     <div class="row">
 
                         <div class="col-12">
-                            <h4 class="h4 mb-3" style="margin-top: 15px">More filters</h4>
                             <div class="mb-3">
+                                <label class="form-label" for="tournament_type">Filter by tournament type</label>
                                 <select class="form-select" name="tournament_type" id="tournament_type">
                                     <option value="any">Any</option>
                                     <option value="master_final">Master Final</option>
@@ -80,7 +90,7 @@
 
                     </div>
 
-                    <div class="row" style="display: none;">
+                    <div class="row">
                         <div class="col-12">
                             <div class="mb-3">
                                 <label class="form-label">Sorting</label>

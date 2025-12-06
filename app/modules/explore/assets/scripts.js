@@ -26,9 +26,15 @@ function send_query() {
         filter.addEventListener('input', () => {
 
             const csrfToken = document.getElementById('csrf_token').value;
+            
+            const tagsInput = document.querySelector('#filter_tags').value;
+            const tags = tagsInput ? tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag !== "") : [];
+
             const searchCriteria = {
                 query: document.querySelector('#filter_title').value,
                 author: document.querySelector('#filter_author').value, 
+                description: document.querySelector('#filter_description').value,
+                tags: tags,
                 tournament_type: document.querySelector('#tournament_type').value,
                 sorting: document.querySelector('[name="sorting"]:checked').value,
             };

@@ -1,4 +1,5 @@
 import pytest
+from datetime import datetime, timedelta
 from app import db
 from app.modules.explore.repositories import ExploreRepository
 from app.modules.dataset.models import DataSet, DSMetaData, TournamentType, Author
@@ -21,28 +22,35 @@ def populated_db(clean_database):
             description="Datos de Javi",
             authors=[author_javi],
             tournament_type=TournamentType.MASTER,
-            dataset_doi="10.001"
+            dataset_doi="10.001",
+            tags="padel, master, 2024"
         )
         meta2 = DSMetaData(
             title="Padel Dataset 2",
             description="Datos de Darío",
             authors=[author_dario],
             tournament_type=TournamentType.OPEN,
-            dataset_doi="10.002"
+            dataset_doi="10.002",
+            tags="padel, open, spain"
         )
         meta3 = DSMetaData(
             title="Padel, con comas.",
             description="Un dataset más",
             authors=[author_jose],
             tournament_type=TournamentType.QUALIFYING,
-            dataset_doi="10.003"
+            dataset_doi="10.003",
+            tags="qualifying, future"
         )
         db.session.add_all([meta1, meta2, meta3])
         db.session.commit()
 
-        ds1 = DataSet(ds_meta_data_id=meta1.id, user_id=test_user.id)
-        ds2 = DataSet(ds_meta_data_id=meta2.id, user_id=test_user.id)
-        ds3 = DataSet(ds_meta_data_id=meta3.id, user_id=test_user.id)
+        # Definimos fechas específicas para probar el sorting
+        # ds1: HOY (El más nuevo)
+        # ds2: AYER
+        # ds3: ANTEAYER (El más antiguo)
+        ds1 = DataSet(ds_meta_data_id=meta1.id, user_id=test_user.id, created_at=datetime.now())
+        ds2 = DataSet(ds_meta_data_id=meta2.id, user_id=test_user.id, created_at=datetime.now() - timedelta(days=1))
+        ds3 = DataSet(ds_meta_data_id=meta3.id, user_id=test_user.id, created_at=datetime.now() - timedelta(days=2))
 
         db.session.add_all([ds1, ds2, ds3])
         db.session.commit()
@@ -196,3 +204,79 @@ def test_explore_filter_by_tournament_type_any(populated_db):
     results = repository.filter(tournament_type="any")
 
     assert len(results) == 3
+
+# ---------------------------------POR DESCRIPCIÓN------------------------------------------
+
+def test_explore_filter_by_description_common(populated_db):
+    repository = ExploreRepository()
+    results = repository.filter(description="Datos")
+
+    assert len(results) == 2
+    titles = {r.ds_meta_data.title for r in results}
+    assert "Padel Dataset 1 (Pádel)" in titles
+    assert "Padel Dataset 2" in titles
+
+def test_explore_filter_by_description_no_match(populated_db):
+    repository = ExploreRepository()
+    results = repository.filter(description="Datos de Juan")
+
+    assert len(results) == 0
+
+#---------------------------------POR ETIQUETAS------------------------------------------
+
+def test_explore_filter_by_tags_no_tags(populated_db):
+    repository = ExploreRepository()
+    results = repository.filter(tags=[])
+
+    assert len(results) == 3  # Todos los datasets deberían ser devueltos
+
+def test_explore_filter_by_single_tag(populated_db):
+    repository = ExploreRepository()
+    results = repository.filter(tags=["master"])
+
+    assert len(results) == 1
+    assert results[0].ds_meta_data.title == "Padel Dataset 1 (Pádel)"
+
+def test_explore_filter_by_multiple_tags_and_logic(populated_db):
+    repository = ExploreRepository()
+    results = repository.filter(tags=["padel", "spain"])
+
+    assert len(results) == 1
+    assert results[0].ds_meta_data.title == "Padel Dataset 2"
+
+def test_explore_filter_by_tags_no_match(populated_db):
+    repository = ExploreRepository()
+    results = repository.filter(tags=["nada"])
+
+    assert len(results) == 0
+
+
+def test_explore_filter_by_tags_partial_match(populated_db):
+    # Dataset 3 tiene "qualifying, future"
+    repository = ExploreRepository()
+    results = repository.filter(tags=["qualif"]) # Debería funcionar con ilike %tag%
+
+    assert len(results) == 1
+    assert results[0].ds_meta_data.title == "Padel, con comas."
+
+#--------------------------------SORTING------------------------------------------
+
+def test_explore_filter_sorting_newest(populated_db):
+    repository = ExploreRepository()
+    results = repository.filter(sorting="newest")
+
+    assert len(results) == 3
+    # El primero debe ser el más nuevo (ds1)
+    assert results[0].ds_meta_data.title == "Padel Dataset 1 (Pádel)"
+    # El último debe ser el más antiguo (ds3)
+    assert results[2].ds_meta_data.title == "Padel, con comas."
+
+def test_explore_filter_sorting_oldest(populated_db):
+    repository = ExploreRepository()
+    results = repository.filter(sorting="oldest")
+
+    assert len(results) == 3
+    # El primero debe ser el más antiguo (ds3)
+    assert results[0].ds_meta_data.title == "Padel, con comas."
+    # El último debe ser el más nuevo (ds1)
+    assert results[2].ds_meta_data.title == "Padel Dataset 1 (Pádel)"

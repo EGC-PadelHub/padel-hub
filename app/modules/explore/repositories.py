@@ -23,10 +23,10 @@ class ExploreRepository(BaseRepository):
 
         datasets = self._apply_title_filter(datasets, title)
         datasets = self._apply_author_filter(datasets, kwargs.get("author", ""))
-        # datasets = self._apply_description_filter(datasets, kwargs.get("description", ""))
-        # datasets = self._apply_tags_filter(datasets, tags)
+        datasets = self._apply_description_filter(datasets, kwargs.get("description", ""))
+        datasets = self._apply_tags_filter(datasets, tags)
         datasets = self._apply_tournament_type_filter(datasets, tournament_type)
-        # datasets = self._apply_sorting(datasets, sorting)
+        datasets = self._apply_sorting(datasets, sorting)
 
         return datasets.distinct().all()
 
@@ -79,7 +79,7 @@ class ExploreRepository(BaseRepository):
         if not description_filters:
             return query
 
-        return query.filter(or_(*description_filters))
+        return query.filter(and_(*description_filters))
     
     def _apply_tags_filter(self, query, tags: list):
         if not tags:

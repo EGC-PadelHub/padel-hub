@@ -76,32 +76,31 @@ See example CSV files in `app/modules/dataset/csv_examples/` for reference.
 - MariaDB/MySQL
 - Docker (optional)
 
-### Installation
+## 🚀 Deployment
 
+This application can be deployed in three ways:
+
+### 🖥️ Local Development
 ```bash
-# Clone the repository
-git clone https://github.com/EGC-PadelHub/padel-hub.git
-cd padel-hub
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Configure environment
-cp .env.example .env
-# Edit .env with your configuration
-
-# Initialize database
-flask db upgrade
-
-# Run development server
-flask run
+./run_local.sh
 ```
+- **Access:** http://localhost:5000
+- **Requirements:** Python 3.12+, MariaDB
+- **Features:** Hot reload enabled, direct debugging
+- The script automatically handles environment configuration, database setup, and service conflicts
 
-### Running with Docker
-
+### 🐳 Docker (Recommended)
 ```bash
-docker-compose -f docker/docker-compose.dev.yml up
+./run_docker.sh
 ```
+- **Access:** http://localhost
+- **Requirements:** Docker & Docker Compose
+- **Includes:** Flask + MariaDB + Nginx + Selenium Grid (Chrome/Firefox)
+- **Features:** Isolated environment, production-like setup, automated migrations
+- **Stop:** `./stop_docker.sh`
+
+### ☁️ Render.com
+Deploy directly from GitHub to [Render.com](https://render.com) for production hosting
 
 ## 📝 API Documentation
 

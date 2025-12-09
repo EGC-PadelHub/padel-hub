@@ -1,10 +1,25 @@
+# ============================================================================
+# WORKFLOW: Deploy to Preproduction (Trunk Branch)
+# ============================================================================
+# Purpose: Automatic deployment to preproduction when changes are pushed to trunk
+# 
+# Triggers:
+#   - Push to trunk branch (merges from feature/* or bugfix branches)
+#
+# Process:
+#   1. Trigger Render deployment webhook for preproduction environment
+#   2. Verify deployment was triggered successfully (HTTP 200/202)
+#
+# Notes:
+#   - Feature branches merge directly to trunk for testing
+#   - No tests run here (tests run on main before production deploy)
+#   - Preproduction environment for validation before merging to main
+# ============================================================================
+
 name: Deploy to Render Trunk
 
 on:
   push:
-    branches:
-      - trunk
-  pull_request:
     branches:
       - trunk
 

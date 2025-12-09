@@ -1,3 +1,25 @@
+# ============================================================================
+# WORKFLOW: Auto-Manage Issues
+# ============================================================================
+# Purpose: Automatically manage GitHub issues when created or edited
+# 
+# Triggers:
+#   - Issues opened or edited
+#
+# Process:
+#   1. Auto-assign users listed in "Assignees" section of issue template
+#   2. Add issue to project board "padel-hub Board"
+#   3. Auto-label priority based on "Priority" field in issue template:
+#      - High → "priority: high" label
+#      - Medium → "priority: medium" label
+#      - Low → "priority: low" label
+#
+# Notes:
+#   - Works with issue templates (Bug Report, Feature Request, Documentation)
+#   - Parses issue body to extract metadata
+#   - Requires write permissions for issues and projects
+# ============================================================================
+
 name: Auto Assign, Add to Project and Label Priority
 
 on:

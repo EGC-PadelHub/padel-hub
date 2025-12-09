@@ -1,10 +1,28 @@
+# ============================================================================
+# WORKFLOW: Codacy Code Quality Analysis (Trunk Branch)
+# ============================================================================
+# Purpose: Run code quality analysis and tests on trunk branch
+# 
+# Triggers:
+#   - Push to trunk branch
+#
+# Process:
+#   1. Check for outdated dependencies
+#   2. Run tests with MySQL service (Python 3.11 and 3.12)
+#   3. Generate code coverage report
+#   4. Upload coverage to Codacy for quality analysis
+#   5. Run Codacy security analysis
+#
+# Notes:
+#   - Runs on trunk to validate code before merging to main
+#   - Matrix strategy tests on multiple Python versions
+#   - Requires CODACY_PROJECT_TOKEN secret for uploads
+# ============================================================================
+
 name: Codacy CI
 
 on:
   push:
-    branches:
-      - trunk
-  pull_request:
     branches:
       - trunk
 

@@ -1,11 +1,30 @@
+# ============================================================================
+# WORKFLOW: Deploy to Production (Main Branch)
+# ============================================================================
+# Purpose: Automatic deployment to production when changes are pushed to main
+# 
+# Triggers:
+#   - Push to main branch (direct merge from trunk)
+#
+# Process:
+#   1. Run all tests (except Selenium) with MySQL service
+#   2. Detect version bump type from commit message:
+#      - "docs:" → PATCH version (no deploy, docs only)
+#      - "fix:" → MINOR version (bug fixes)
+#      - "feat:" or other → MAJOR version (new features)
+#   3. Create Git tag with new version (e.g., v2.0.0, v1.1.0)
+#   4. Create GitHub Release (only for MAJOR versions)
+#   5. Deploy to Render production environment
+#
+# Notes:
+#   - Merges are done directly: trunk → main
+#   - Version bumps follow Semantic Versioning (MAJOR.MINOR.PATCH)
+# ============================================================================
+
 name: Deploy to Render on Version Bump
 
-# SOLUCIÓN: Solo triggers en branches, NO en tags
 on:
   push:
-    branches:
-      - main
-  pull_request:
     branches:
       - main
 
@@ -75,8 +94,8 @@ jobs:
         echo "Commit message: $COMMIT_MSG"
         
         if [[ "$COMMIT_MSG" =~ ^docs: ]]; then
-          echo "📚 Detected 'docs:' in commit message - NO version bump (documentation only)"
-          echo "bump_type=none" >> $GITHUB_OUTPUT
+          echo "📚 Detected 'docs:' in commit message - will bump PATCH version"
+          echo "bump_type=patch" >> $GITHUB_OUTPUT
         elif [[ "$COMMIT_MSG" =~ [Ff]ix ]]; then
           echo "🔧 Detected 'fix' in commit message - will bump MINOR version"
           echo "bump_type=minor" >> $GITHUB_OUTPUT
@@ -125,6 +144,9 @@ jobs:
           NEW_MINOR=$((MINOR + 1))
           NEW_PATCH=0
           echo "Base calculation: MINOR bump $MAJOR.$MINOR.$PATCH → $MAJOR.$NEW_MINOR.$NEW_PATCH"
+        elif [[ "${{ needs.detect-version-bump.outputs.version_bump }}" == "patch" ]]; then
+          NEW_PATCH=$((PATCH + 1))
+          echo "Base calculation: PATCH bump $MAJOR.$MINOR.$PATCH → $MAJOR.$MINOR.$NEW_PATCH"
         else
           NEW_MAJOR=$((MAJOR + 1))
           NEW_MINOR=0
@@ -137,6 +159,8 @@ jobs:
         while [ $ATTEMPT -lt 20 ]; do
           if [[ "${{ needs.detect-version-bump.outputs.version_bump }}" == "minor" ]]; then
             CANDIDATE_TAG="v$MAJOR.$NEW_MINOR.$NEW_PATCH"
+          elif [[ "${{ needs.detect-version-bump.outputs.version_bump }}" == "patch" ]]; then
+            CANDIDATE_TAG="v$MAJOR.$MINOR.$NEW_PATCH"
           else
             CANDIDATE_TAG="v$NEW_MAJOR.$NEW_MINOR.$NEW_PATCH"
           fi
@@ -148,6 +172,8 @@ jobs:
           else
             echo "⚠️  Tag $CANDIDATE_TAG exists, trying next..."
             if [[ "${{ needs.detect-version-bump.outputs.version_bump }}" == "minor" ]]; then
+              NEW_PATCH=$((NEW_PATCH + 1))
+            elif [[ "${{ needs.detect-version-bump.outputs.version_bump }}" == "patch" ]]; then
               NEW_PATCH=$((NEW_PATCH + 1))
             else
               NEW_MAJOR=$((NEW_MAJOR + 1))
@@ -178,11 +204,29 @@ jobs:
           }'
         echo "🎉 Successfully created tag ${{ steps.versioning.outputs.new_tag }} via API"
 
+    - name: Create GitHub Release for MAJOR version
+      if: needs.detect-version-bump.outputs.version_bump == 'major'
+      run: |
+        echo "Creating GitHub Release for MAJOR version ${{ steps.versioning.outputs.new_tag }}..."
+        COMMIT_MSG=$(git log -1 --pretty=%B)
+        curl -X POST \
+          -H "Authorization: token ${{ secrets.PAT_TOKEN }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          "https://api.github.com/repos/${{ github.repository }}/releases" \
+          -d "{
+            \"tag_name\": \"${{ steps.versioning.outputs.new_tag }}\",
+            \"name\": \"Release ${{ steps.versioning.outputs.new_tag }}\",
+            \"body\": \"$COMMIT_MSG\",
+            \"draft\": false,
+            \"prerelease\": false
+          }"
+        echo "🎉 Successfully created release ${{ steps.versioning.outputs.new_tag }}"
+
   deploy:
     name: Deploy to Render
     runs-on: ubuntu-latest
     needs: [testing, detect-version-bump, create-release-tag]
-    if: ${{ needs.testing.result == 'success' && needs.detect-version-bump.outputs.version_bump != 'none' && needs.create-release-tag.result == 'success' }}
+    if: ${{ needs.testing.result == 'success' && (needs.detect-version-bump.outputs.version_bump == 'major' || needs.detect-version-bump.outputs.version_bump == 'minor') && needs.create-release-tag.result == 'success' }}
     
     steps:
       - name: Check out the repo

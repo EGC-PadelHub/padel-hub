@@ -78,28 +78,88 @@ See example CSV files in `app/modules/dataset/csv_examples/` for reference.
 
 ## 🚀 Deployment
 
-This application can be deployed in three ways:
-
 ### 🖥️ Local Development
+
+**Requirements:** Python 3.12+, MariaDB, Virtual Environment
+
+**Quick Start:**
 ```bash
+# Create virtual environment (first time only)
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# Run the application
 ./run_local.sh
 ```
-- **Access:** http://localhost:5000
-- **Requirements:** Python 3.12+, MariaDB
-- **Features:** Hot reload enabled, direct debugging
-- The script automatically handles environment configuration, database setup, and service conflicts
+
+**Access:** http://localhost:5000
+
+**What it does:**
+- Configures `.env` from `.env.local.example`
+- Stops Docker containers if running
+- Frees port 5000
+- Starts MariaDB if not running
+- Activates virtual environment
+- Installs dependencies if needed
+- Verifies database connection
+- Runs migrations automatically if database is empty
+- Starts Flask with hot reload
+
+---
 
 ### 🐳 Docker (Recommended)
+
+**Requirements:** Docker & Docker Compose ([Install Docker](https://docs.docker.com/get-docker/))
+
+**Quick Start:**
 ```bash
+# Run the application
+./run_docker.sh
+
+# Stop the application
+./stop_docker.sh
+```
+
+**Access:** http://localhost
+
+**What it does:**
+- Configures `.env` from `.env.docker.example`
+- Stops local MariaDB if running
+- Frees occupied ports (80, 3306, 5000, 4444)
+- Stops previous containers
+- Builds and starts all services
+- Waits for services to be ready
+- Runs migrations automatically
+
+**Services included:**
+- Flask application (port 80 via Nginx)
+- MariaDB database (port 3306)
+- Selenium Grid (port 4444)
+- VNC Chrome (port 5900)
+- VNC Firefox (port 5901)
+
+**Useful commands:**
+```bash
+# View logs
+docker compose -f docker/docker-compose.dev.yml logs -f web
+
+# Access container
+docker exec -it web_app_container bash
+
+# Restart services
+docker compose -f docker/docker-compose.dev.yml restart web
+
+# Clean rebuild
+docker compose -f docker/docker-compose.dev.yml down -v
+docker compose -f docker/docker-compose.dev.yml build --no-cache
 ./run_docker.sh
 ```
-- **Access:** http://localhost
-- **Requirements:** Docker & Docker Compose
-- **Includes:** Flask + MariaDB + Nginx + Selenium Grid (Chrome/Firefox)
-- **Features:** Isolated environment, production-like setup, automated migrations
-- **Stop:** `./stop_docker.sh`
+
+---
 
 ### ☁️ Render.com
+
 Deploy directly from GitHub to [Render.com](https://render.com) for production hosting
 
 ## 📝 API Documentation

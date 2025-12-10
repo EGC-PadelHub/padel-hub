@@ -22,6 +22,18 @@ body:
       required: true
 
   - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How urgent is this issue?
+      options:
+        - 🔴 High - Blocks critical functionality
+        - 🟡 Medium - Affects functionality but has a workaround
+        - 🟢 Low - Minor or cosmetic issue
+    validations:
+      required: true
+
+  - type: dropdown
     id: doc-type
     attributes:
       label: Documentation Type

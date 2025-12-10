@@ -123,29 +123,32 @@ pytest --cov=app
 
 Contributions are welcome! Please read our contributing guidelines before submitting pull requests.
 
-## � Documentation
+## 📄 Documentation
 
-### Project Documentation
+### Academic Project Documentation (`/docs`)
 
-- **[Contributing Guide](.github/CONTRIBUTING.md)** - Complete workflow for contributing to the project
-  - Issue templates and management
-  - Commit conventions (Conventional Commits)
-  - Branch strategy (main, trunk, bugfix, feature/*)
-  - Merge workflow and versioning
-  - Git hooks usage
+Complete project documentation for academic submission:
 
-- **[Issue Templates](.github/ISSUE_TEMPLATE/)** - Standardized templates for:
-  - 🐛 Bug reports
-  - ✨ Feature requests
-  - 📚 Documentation improvements
+| Document | Description |
+|----------|-------------|
+| **[Project-Document.md](docs/Project-Document.md)** | Complete academic project documentation with team info, metrics, system architecture, and development process |
+| **[Team-Diary.md](docs/Team-Diary.md)** | Team meeting records with 9 meeting summaries and project evolution timeline |
+| **[Cover-Template.md](docs/Cover-Template.md)** | Project cover page with team information, repository links, and course details |
+| **[CI-CD-Workflows.md](docs/CI-CD-Workflows.md)** | Detailed explanation of GitHub Actions workflows, CI/CD automation, and semantic versioning system |
+| **[CONTRIBUTING.md](docs/CONTRIBUTING.md)** | Complete development workflow guide with branching strategy, commit conventions, and merge processes |
+| **[CONTRIBUTING_EN_EXAMPLES.md](docs/CONTRIBUTING_EN_EXAMPLES.md)** | English examples of commit messages and merge formats for international contributors |
 
-- **[Git Hooks](.githooks/)** - Automated validation
-  - commit-msg hook for enforcing commit conventions
-  - Installation and usage instructions
+### Additional Technical Documentation
+
+- **[Issue Templates](.github/ISSUE_TEMPLATE/)** - Standardized templates for bug reports, feature requests, and documentation improvements
+- **[Git Hooks](.githooks/)** - Automated commit validation with installation instructions
+
+- **[Fakenodo README](app/modules/fakenodo/README.md)** - Mock Zenodo API for development and testing
+- **[CSV Errors README](app/modules/dataset/padel_csv_errors/README.md)** - Test files with validation errors for CSV structure testing
 
 ### Getting Started
 
-1. Read the [Contributing Guide](.github/CONTRIBUTING.md)
+1. Read the [Contributing Guide](docs/CONTRIBUTING.md)
 2. Install Git hooks: `cp .githooks/commit-msg .git/hooks/commit-msg && chmod +x .git/hooks/commit-msg`
 3. Configure commit template: `git config commit.template .gitmessage`
 4. Create an issue using our templates

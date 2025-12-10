@@ -4,6 +4,8 @@ services:
     image: "${DOCKERHUB_NAME}/padel-hub:latest"
     env_file:
       - ../.env
+    environment:
+      - FAKENODO_HOSTNAME=web
     ports:
       - "5000:5000"
     depends_on:

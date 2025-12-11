@@ -4,7 +4,6 @@ import unidecode
 from sqlalchemy import or_, and_
 
 from app.modules.dataset.models import Author, DataSet, DSMetaData, TournamentType
-from app.modules.featuremodel.models import FeatureModel, FMMetaData
 from core.repositories.BaseRepository import BaseRepository
 
 
@@ -16,8 +15,6 @@ class ExploreRepository(BaseRepository):
         datasets = (
             self.model.query.join(DSMetaData, DataSet.ds_meta_data)
             .join(Author, DSMetaData.authors, isouter=True)
-            .join(FeatureModel, DataSet.feature_models, isouter=True)
-            .join(FMMetaData, FeatureModel.fm_meta_data, isouter=True)
             .filter(DSMetaData.dataset_doi.isnot(None))
         )
 

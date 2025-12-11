@@ -23,58 +23,6 @@ class AuthorForm(FlaskForm):
         }
 
 
-class FeatureModelForm(FlaskForm):
-    # Keep the field name `uvl_filename` for DB compatibility, but show CSV in the UI
-    uvl_filename = StringField("CSV Filename", validators=[DataRequired()])
-    title = StringField("Title", validators=[Optional()])
-    desc = TextAreaField("Description", validators=[Optional()])
-    tournament_type = SelectField(
-        "Padel Tournament Type",
-        choices=[
-            ("", "--"),
-            ("master_final", "Master Final"),
-            ("master", "Master"),
-            ("open", "Open"),
-            ("qualifying", "Qualifying"),
-            ("national_tours", "National Tours"),
-            ("other", "Other"),
-        ],
-        default="",
-        validators=[Optional()],
-    )
-    publication_doi = StringField("Publication DOI", validators=[Optional(), URL()])
-    tags = StringField("Tags (separated by commas)")
-    version = StringField("CSV Version")
-    authors = FieldList(FormField(AuthorForm))
-
-    class Meta:
-        csrf = False  # disable CSRF because is subform
-
-    def get_authors(self):
-        return [author.get_author() for author in self.authors]
-
-    def get_fmmetadata(self):
-        return {
-            "uvl_filename": self.uvl_filename.data,
-            "title": self.title.data,
-            "description": self.desc.data,
-            "tournament_type": self.convert_tournament_type(self.tournament_type.data),
-            "publication_doi": self.publication_doi.data,
-            "tags": self.tags.data,
-            "uvl_version": self.version.data,
-        }
-
-    def convert_tournament_type(self, value):
-        """Convert form value to TournamentType enum name."""
-        # Handle empty string or None as NONE
-        if not value or value == "":
-            return "NONE"
-        for pt in TournamentType:
-            if pt.value == value:
-                return pt.name
-        return "NONE"
-
-
 class DataSetForm(FlaskForm):
     title = StringField("Title", validators=[DataRequired()])
     desc = TextAreaField("Description", validators=[DataRequired()])
@@ -112,7 +60,6 @@ class DataSetForm(FlaskForm):
     match_count = StringField("Number of Matches", validators=[Optional()])
     
     authors = FieldList(FormField(AuthorForm))
-    feature_models = FieldList(FormField(FeatureModelForm), min_entries=1)
     upload_type = RadioField(
         "Upload type",
         choices=[
@@ -152,6 +99,3 @@ class DataSetForm(FlaskForm):
 
     def get_authors(self):
         return [author.get_author() for author in self.authors]
-
-    def get_feature_models(self):
-        return [fm.get_feature_model() for fm in self.feature_models]

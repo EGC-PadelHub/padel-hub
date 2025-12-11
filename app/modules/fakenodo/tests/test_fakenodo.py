@@ -73,5 +73,7 @@ def test_list_returns_created_records():
         client.post(BASE, data=json.dumps({"metadata": {"title": f"R{i}"}}), content_type="application/json")
     r = client.get(BASE)
     assert r.status_code == 200
-    arr = r.get_json().get("depositions", [])
+    # Zenodo API returns a list directly, not wrapped in an object
+    arr = r.get_json()
+    assert isinstance(arr, list)
     assert len(arr) >= 3

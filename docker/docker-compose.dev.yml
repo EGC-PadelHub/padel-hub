@@ -3,6 +3,8 @@ services:
     container_name: web_app_container
     env_file:
       - ../.env
+    environment:
+      - FAKENODO_HOSTNAME=web
     expose:
       - "5000"
     depends_on:

@@ -128,6 +128,23 @@ var currentId = 0;
             upload_error.style.display = 'block';
         }
 
+        function test_zenodo_connection() {
+            // Test fakenodo connection
+            fetch('/fakenodo/api', {
+                method: 'GET',
+            })
+                .then(response => {
+                    if (response.ok) {
+                        console.log('Fakenodo API connection successful');
+                    } else {
+                        console.warn('Fakenodo API connection failed, but continuing...');
+                    }
+                })
+                .catch(error => {
+                    console.warn('Could not reach fakenodo API:', error);
+                });
+        }
+
         window.onload = function () {
 
             test_zenodo_connection();

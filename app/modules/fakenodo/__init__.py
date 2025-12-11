@@ -1,7 +1,9 @@
 """Fakenodo module package.
 
-Deprecated standalone app removed. Expose the in-process blueprint for module
-registration. Tests only need the main Flask app plus this blueprint.
+Expose the in-process blueprint for module registration.
+This module provides a mock Zenodo API for testing and development.
 """
 
 from .routes import fakenodo_module  # noqa: F401
+
+__all__ = ["fakenodo_module"]

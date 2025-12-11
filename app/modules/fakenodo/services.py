@@ -11,7 +11,7 @@ import os
 from flask_login import current_user
 
 from app.modules.dataset.models import DataSet
-from app.modules.featuremodel.models import FeatureModel
+from app.modules.hubfile.models import Hubfile
 from core.configuration.configuration import uploads_folder_name
 from core.services.BaseService import BaseService
 
@@ -56,15 +56,15 @@ class FakenodoService(BaseService):
             "published": False,
         }
 
-    def upload_file(self, dataset: DataSet, deposition_id: int, feature_model: FeatureModel, user=None) -> dict:
+    def upload_file(self, dataset: DataSet, deposition_id: int, file: Hubfile, user=None) -> dict:
         """Fake upload file - NO REAL API CALL."""
-        uvl_filename = feature_model.fm_meta_data.uvl_filename
-        logger.info(f"FAKE upload of {uvl_filename} to deposition {deposition_id}")
+        filename = file.name
+        logger.info(f"FAKE upload of {filename} to deposition {deposition_id}")
         
         # Return fake success response
         return {
-            "filename": uvl_filename,
-            "link": f"http://fake-zenodo.org/files/{deposition_id}/{uvl_filename}"
+            "filename": filename,
+            "link": f"http://fake-zenodo.org/files/{deposition_id}/{filename}"
         }
 
     def publish_deposition(self, deposition_id: int) -> dict:

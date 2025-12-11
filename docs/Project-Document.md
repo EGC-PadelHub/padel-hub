@@ -127,15 +127,12 @@ PadelHub implementa una arquitectura modular basada en Flask con separación cla
 2. **dataset/** - Gestión y validación de datasets CSV
 3. **explore/** - Exploración y búsqueda de datasets
 4. **fakenodo/** - Simulación de Zenodo para desarrollo
-5. **featuremodel/** - Gestión de modelos de características
-6. **flamapy/** - Integración con librería FLAMAPY
-7. **hubfile/** - Gestión de ficheros del hub
-8. **profile/** - Perfiles de usuario y estadísticas
-9. **public/** - Páginas públicas
-10. **team/** - Información del equipo
-11. **uvl/** - Gestión de ficheros UVL
-12. **webhook/** - Webhooks de integración
-13. **zenodo/** - Integración con Zenodo para DOI
+5. **hubfile/** - Gestión de ficheros del hub
+6. **profile/** - Perfiles de usuario y estadísticas
+7. **public/** - Páginas públicas
+8. **team/** - Información del equipo
+9. **webhook/** - Webhooks de integración
+10. **zenodo/** - Integración con Zenodo para DOI
 
 ### Características Principales
 

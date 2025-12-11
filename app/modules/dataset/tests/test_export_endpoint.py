@@ -6,7 +6,6 @@ import pytest
 
 from app import db
 from app.modules.dataset.models import DataSet, DSMetaData, TournamentType
-from app.modules.featuremodel.models import FeatureModel, FMMetaData
 from app.modules.hubfile.models import Hubfile
 
 
@@ -32,15 +31,6 @@ class TestDatasetExport:
         db.session.add(dataset)
         db.session.flush()
 
-        # Feature model wrapper and file entry (we treat CSV as a hubfile)
-        fmmeta = FMMetaData(uvl_filename="data.csv", title="fm", description="d", tournament_type=TournamentType.OTHER)
-        db.session.add(fmmeta)
-        db.session.flush()
-
-        fm = FeatureModel(data_set_id=dataset.id, fm_meta_data_id=fmmeta.id)
-        db.session.add(fm)
-        db.session.flush()
-
         # Ensure uploads path
         base = os.path.join(os.environ["WORKING_DIR"], "uploads", f"user_{user_id}", f"dataset_{dataset.id}")
         os.makedirs(base, exist_ok=True)
@@ -50,7 +40,7 @@ class TestDatasetExport:
 
         # File db entry
         size = os.path.getsize(csv_path)
-        file = Hubfile(name="data.csv", checksum="dummy", size=size, feature_model_id=fm.id)
+        file = Hubfile(name="data.csv", checksum="dummy", size=size, dataset_id=dataset.id)
         db.session.add(file)
         db.session.commit()
 

@@ -3,7 +3,6 @@ from datetime import datetime, timedelta
 from app import db
 from app.modules.explore.repositories import ExploreRepository
 from app.modules.dataset.models import DataSet, DSMetaData, TournamentType, Author
-from app.modules.featuremodel.models import FeatureModel, FMMetaData
 from app.modules.auth.models import User
 
 
@@ -53,29 +52,6 @@ def populated_db(clean_database):
         ds3 = DataSet(ds_meta_data_id=meta3.id, user_id=test_user.id, created_at=datetime.now() - timedelta(days=2))
 
         db.session.add_all([ds1, ds2, ds3])
-        db.session.commit()
-
-        fm_meta1 = FMMetaData(
-            title="FM Meta 1", description="FM de Padel", uvl_filename="fm_padel.uvl",
-            tournament_type=TournamentType.MASTER
-        )
-        fm_meta2 = FMMetaData(
-            title="FM Meta 2", description="FM de Padel 2", uvl_filename="fm_padel_2.uvl",
-            tournament_type=TournamentType.OPEN
-        )
-        fm_meta3 = FMMetaData(
-            title="FM Meta 3", description="FM de Padel 3", uvl_filename="fm_padel_3.uvl",
-            tournament_type=TournamentType.QUALIFYING
-        )
-
-        db.session.add_all([fm_meta1, fm_meta2, fm_meta3])
-        db.session.commit()
-
-        fm1 = FeatureModel(fm_meta_data_id=fm_meta1.id, data_set_id=ds1.id)
-        fm2 = FeatureModel(fm_meta_data_id=fm_meta2.id, data_set_id=ds2.id)
-        fm3 = FeatureModel(fm_meta_data_id=fm_meta3.id, data_set_id=ds3.id)
-
-        db.session.add_all([fm1, fm2, fm3])
         db.session.commit()
 
         yield db

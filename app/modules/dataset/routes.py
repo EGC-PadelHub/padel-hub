@@ -36,15 +36,6 @@ from app.modules.dataset.services import (
 from app.modules.fakenodo.services import FakenodoService
 from app.modules.dataset.types.tabular import TabularDataset
 
-# Optional imports for feature model conversions
-try:
-    from flamapy.metamodels.fm_metamodel.transformations import UVLReader
-    from flamapy.metamodels.pysat_metamodel.transformations import DimacsWriter, FmToPysat
-except Exception:  # pragma: no cover - only needed when exporting UVL to CNF/DIMACS
-    UVLReader = None
-    DimacsWriter = None
-    FmToPysat = None
-
 logger = logging.getLogger(__name__)
 
 
@@ -73,7 +64,6 @@ def create_dataset():
             logger.info("Creating dataset...")
             dataset = dataset_service.create_from_form(form=form, current_user=current_user)
             logger.info(f"Created dataset: {dataset}")
-            dataset_service.move_feature_models(dataset)
         except Exception as exc:
             logger.exception(f"Exception while create dataset data in local {exc}")
             return jsonify({"Exception while create dataset data in local: ": str(exc)}), 400
@@ -104,10 +94,6 @@ def create_dataset():
             dataset_service.update_dsmetadata(dataset.ds_meta_data_id, deposition_id=deposition_id)
 
             try:
-                # iterate for each feature model (one feature model = one request to Zenodo)
-                for feature_model in dataset.feature_models:
-                    zenodo_service.upload_file(dataset, deposition_id, feature_model)
-
                 # publish deposition
                 zenodo_service.publish_deposition(deposition_id)
 
@@ -115,7 +101,7 @@ def create_dataset():
                 deposition_doi = zenodo_service.get_doi(deposition_id)
                 dataset_service.update_dsmetadata(dataset.ds_meta_data_id, dataset_doi=deposition_doi)
             except Exception as e:
-                msg = f"it has not been possible upload feature models in Zenodo and update the DOI: {e}"
+                msg = f"it has not been possible to publish to Zenodo and update the DOI: {e}"
                 return jsonify({"message": msg}), 200
 
         # Delete temp folder
@@ -462,11 +448,6 @@ def export_dataset(dataset_id: int):
         wb.save(bio)
         return bio.getvalue()
 
-    def _uvl_to_dimacs_bytes(uvl_path: str) -> bytes:
-        if not (UVLReader and DimacsWriter and FmToPysat):
-            logger.warning("Flamapy not available; skipping DIMACS export for %s", uvl_path)
-            return b""
-
     def _csv_to_tsv_bytes(csv_path: str) -> bytes:
         import csv as _csv
         from io import StringIO
@@ -504,88 +485,77 @@ def export_dataset(dataset_id: int):
 
     with ZipFile(zip_path, "w") as zipf:
         # Iterate dataset files via DB and resolve absolute paths via service
-        for fm in getattr(dataset, "feature_models", []) or []:
-            for hubfile in getattr(fm, "files", []) or []:
+        for hubfile in dataset.files():
+            try:
+                full_path = HubfileService().get_path_by_hubfile(hubfile)
+            except Exception:
+                full_path = None
+            if not full_path or not os.path.isfile(full_path):
+                continue
+
+            orig_filename = os.path.basename(hubfile.name or os.path.basename(full_path))
+            file_base, ext = os.path.splitext(orig_filename)
+            ext = ext.lower()
+
+            # Include original CSVs under csv/
+            if ext == ".csv":
+                arc_csv = os.path.join(base_name, "csv", orig_filename)
                 try:
-                    full_path = HubfileService().get_path_by_hubfile(hubfile)
-                except Exception:
-                    full_path = None
-                if not full_path or not os.path.isfile(full_path):
-                    continue
+                    zipf.write(full_path, arcname=arc_csv)
+                except Exception as exc:
+                    logger.exception("Failed to add CSV to zip: %s", exc)
 
-                orig_filename = os.path.basename(hubfile.name or os.path.basename(full_path))
-                file_base, ext = os.path.splitext(orig_filename)
-                ext = ext.lower()
+                # JSON
+                try:
+                    json_bytes = _csv_to_json_bytes(full_path)
+                    zipf.writestr(os.path.join(base_name, "json", f"{file_base}.json"), json_bytes)
+                except Exception as exc:
+                    logger.exception("CSV->JSON export failed for %s: %s", orig_filename, exc)
 
-                # Include original CSVs under csv/
-                if ext == ".csv":
-                    arc_csv = os.path.join(base_name, "csv", orig_filename)
-                    try:
-                        zipf.write(full_path, arcname=arc_csv)
-                    except Exception as exc:
-                        logger.exception("Failed to add CSV to zip: %s", exc)
+                # XML
+                try:
+                    xml_bytes = _csv_to_xml_bytes(full_path)
+                    zipf.writestr(os.path.join(base_name, "xml", f"{file_base}.xml"), xml_bytes)
+                except Exception as exc:
+                    logger.exception("CSV->XML export failed for %s: %s", orig_filename, exc)
 
-                    # JSON
-                    try:
-                        json_bytes = _csv_to_json_bytes(full_path)
-                        zipf.writestr(os.path.join(base_name, "json", f"{file_base}.json"), json_bytes)
-                    except Exception as exc:
-                        logger.exception("CSV->JSON export failed for %s: %s", orig_filename, exc)
+                # XLSX
+                try:
+                    xlsx_bytes = _csv_to_xlsx_bytes(full_path)
+                    if xlsx_bytes:
+                        zipf.writestr(os.path.join(base_name, "xlsx", f"{file_base}.xlsx"), xlsx_bytes)
+                except Exception as exc:
+                    logger.exception("CSV->XLSX export failed for %s: %s", orig_filename, exc)
 
-                    # XML
-                    try:
-                        xml_bytes = _csv_to_xml_bytes(full_path)
-                        zipf.writestr(os.path.join(base_name, "xml", f"{file_base}.xml"), xml_bytes)
-                    except Exception as exc:
-                        logger.exception("CSV->XML export failed for %s: %s", orig_filename, exc)
+                # TSV
+                try:
+                    tsv_bytes = _csv_to_tsv_bytes(full_path)
+                    zipf.writestr(os.path.join(base_name, "tsv", f"{file_base}.tsv"), tsv_bytes)
+                except Exception as exc:
+                    logger.exception("CSV->TSV export failed for %s: %s", orig_filename, exc)
 
-                    # XLSX
-                    try:
-                        xlsx_bytes = _csv_to_xlsx_bytes(full_path)
-                        if xlsx_bytes:
-                            zipf.writestr(os.path.join(base_name, "xlsx", f"{file_base}.xlsx"), xlsx_bytes)
-                    except Exception as exc:
-                        logger.exception("CSV->XLSX export failed for %s: %s", orig_filename, exc)
+                # YAML
+                try:
+                    yaml_bytes = _csv_to_yaml_bytes(full_path)
+                    zipf.writestr(os.path.join(base_name, "yaml", f"{file_base}.yaml"), yaml_bytes)
+                except Exception as exc:
+                    logger.exception("CSV->YAML export failed for %s: %s", orig_filename, exc)
 
-                    # TSV
-                    try:
-                        tsv_bytes = _csv_to_tsv_bytes(full_path)
-                        zipf.writestr(os.path.join(base_name, "tsv", f"{file_base}.tsv"), tsv_bytes)
-                    except Exception as exc:
-                        logger.exception("CSV->TSV export failed for %s: %s", orig_filename, exc)
+                # TXT (plain-text view of CSV)
+                try:
+                    txt_bytes = _csv_to_txt_bytes(full_path)
+                    zipf.writestr(os.path.join(base_name, "txt", f"{file_base}.txt"), txt_bytes)
+                except Exception as exc:
+                    logger.exception("CSV->TXT export failed for %s: %s", orig_filename, exc)
 
-                    # YAML
-                    try:
-                        yaml_bytes = _csv_to_yaml_bytes(full_path)
-                        zipf.writestr(os.path.join(base_name, "yaml", f"{file_base}.yaml"), yaml_bytes)
-                    except Exception as exc:
-                        logger.exception("CSV->YAML export failed for %s: %s", orig_filename, exc)
-
-                    # TXT (plain-text view of CSV)
-                    try:
-                        txt_bytes = _csv_to_txt_bytes(full_path)
-                        zipf.writestr(os.path.join(base_name, "txt", f"{file_base}.txt"), txt_bytes)
-                    except Exception as exc:
-                        logger.exception("CSV->TXT export failed for %s: %s", orig_filename, exc)
-
-                # Feature model UVL -> DIMACS
-                elif ext == ".uvl":
-                    try:
-                        dimacs_bytes = _uvl_to_dimacs_bytes(full_path)
-                        if dimacs_bytes:
-                            zipf.writestr(os.path.join(base_name, "dimacs", f"{file_base}.cnf"), dimacs_bytes)
-                            # Also provide .dimacs extension for convenience
-                            zipf.writestr(os.path.join(base_name, "dimacs", f"{file_base}.dimacs"), dimacs_bytes)
-                    except Exception as exc:
-                        logger.exception("UVL->DIMACS export failed for %s: %s", orig_filename, exc)
-                else:
-                    # Copy other files as-is under original/
-                    rel_name = orig_filename
-                    arc_other = os.path.join(base_name, "original", rel_name)
-                    try:
-                        zipf.write(full_path, arcname=arc_other)
-                    except Exception as exc:
-                        logger.exception("Failed to add file to zip: %s", exc)
+            else:
+                # Copy other files as-is under original/
+                rel_name = orig_filename
+                arc_other = os.path.join(base_name, "original", rel_name)
+                try:
+                    zipf.write(full_path, arcname=arc_other)
+                except Exception as exc:
+                    logger.exception("Failed to add file to zip: %s", exc)
 
     # Manage download cookie and record
     user_cookie = request.cookies.get("download_cookie")
@@ -640,17 +610,12 @@ def subdomain_index(doi):
     # Prepare CSV preview rows (if any CSV file exists in the dataset)
     csv_preview_rows = []
     try:
-        found = False
-        for fm in dataset.feature_models:
-            for file in fm.files:
-                if file.name.lower().endswith(".csv"):
-                    csv_path = os.path.join("uploads", f"user_{dataset.user_id}", f"dataset_{dataset.id}", file.name)
-                    if os.path.exists(csv_path):
-                        tab = TabularDataset(dataset)
-                        csv_preview_rows = tab.preview(csv_path, rows=5)
-                    found = True
-                    break
-            if found:
+        for file in dataset.files():
+            if file.name.lower().endswith(".csv"):
+                csv_path = os.path.join("uploads", f"user_{dataset.user_id}", f"dataset_{dataset.id}", file.name)
+                if os.path.exists(csv_path):
+                    tab = TabularDataset(dataset)
+                    csv_preview_rows = tab.preview(csv_path, rows=5)
                 break
     except Exception as exc:
         logger.exception(f"Exception while preparing CSV preview: {exc}")
@@ -678,17 +643,12 @@ def get_unsynchronized_dataset(dataset_id):
     # Try to prepare CSV preview for unsynchronized dataset as well
     csv_preview_rows = []
     try:
-        found = False
-        for fm in dataset.feature_models:
-            for file in fm.files:
-                if file.name.lower().endswith(".csv"):
-                    csv_path = os.path.join("uploads", f"user_{dataset.user_id}", f"dataset_{dataset.id}", file.name)
-                    if os.path.exists(csv_path):
-                        tab = TabularDataset(dataset)
-                        csv_preview_rows = tab.preview(csv_path, rows=5)
-                    found = True
-                    break
-            if found:
+        for file in dataset.files():
+            if file.name.lower().endswith(".csv"):
+                csv_path = os.path.join("uploads", f"user_{dataset.user_id}", f"dataset_{dataset.id}", file.name)
+                if os.path.exists(csv_path):
+                    tab = TabularDataset(dataset)
+                    csv_preview_rows = tab.preview(csv_path, rows=5)
                 break
     except Exception as exc:
         logger.exception(f"Exception while preparing CSV preview: {exc}")
@@ -751,8 +711,6 @@ def sync_unsynchronized_dataset(dataset_id):
         deposition_id = data.get("id")
         dataset_service.update_dsmetadata(dataset.ds_meta_data_id, deposition_id=deposition_id)
         try:
-            for feature_model in dataset.feature_models:
-                zenodo_service.upload_file(dataset, deposition_id, feature_model)
             zenodo_service.publish_deposition(deposition_id)
             deposition_doi = zenodo_service.get_doi(deposition_id)
             # Persist DOI in DB so dataset appears as synchronized
@@ -760,8 +718,8 @@ def sync_unsynchronized_dataset(dataset_id):
             logger.info("Dataset %s published with DOI %s", dataset.id, deposition_doi)
             flash(f"Dataset published successfully. DOI: {deposition_doi}", "success")
         except Exception as exc:
-            logger.exception(f"Exception while uploading/publishing files: {exc}")
-            flash(f"Failed to upload or publish files: {str(exc)}", "danger")
+            logger.exception(f"Exception while publishing: {exc}")
+            flash(f"Failed to publish: {str(exc)}", "danger")
             return redirect(url_for("dataset.list_dataset"))
 
     # If we didn't receive a conceptrecid or id, log the response for debugging.

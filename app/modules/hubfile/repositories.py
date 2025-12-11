@@ -3,7 +3,6 @@ from sqlalchemy import func
 from app import db
 from app.modules.auth.models import User
 from app.modules.dataset.models import DataSet
-from app.modules.featuremodel.models import FeatureModel
 from app.modules.hubfile.models import Hubfile, HubfileDownloadRecord, HubfileViewRecord
 from core.repositories.BaseRepository import BaseRepository
 
@@ -15,15 +14,13 @@ class HubfileRepository(BaseRepository):
     def get_owner_user_by_hubfile(self, hubfile: Hubfile) -> User:
         return (
             db.session.query(User)
-            .join(DataSet)
-            .join(FeatureModel)
-            .join(Hubfile)
+            .join(DataSet, Hubfile.dataset_id == DataSet.id)
             .filter(Hubfile.id == hubfile.id)
             .first()
         )
 
     def get_dataset_by_hubfile(self, hubfile: Hubfile) -> DataSet:
-        return db.session.query(DataSet).join(FeatureModel).join(Hubfile).filter(Hubfile.id == hubfile.id).first()
+        return db.session.query(DataSet).join(Hubfile, Hubfile.dataset_id == DataSet.id).filter(Hubfile.id == hubfile.id).first()
 
 
 class HubfileViewRecordRepository(BaseRepository):

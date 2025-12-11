@@ -194,49 +194,6 @@
             {% include 'dataset/_csv_preview.html' %}
         {% endif %}
 
-        <div class="card">
-
-            <div class="card-body">
-
-                <h3> Related publication </h3>
-                
-                David Romero-Organvidez, José A. Galindo, Chico Sundermann, Jose-Miguel Horcas, David Benavides,
-                <i>UVLHub: A feature model data repository using UVL and open science principles</i>,
-                Journal of Systems and Software,
-                2024,
-                112150,
-                ISSN 0164-1212,
-                <a href="https://doi.org/10.1016/j.jss.2024.112150" target="_blank">https://doi.org/10.1016/j.jss.2024.112150</a>
-
-            </div>
-
-            <div class="card-body mt-0 pt-0">
-
-                <button onclick="copyText('bibtex_cite')" class="btn btn-light btn-sm" style="border-radius: 5px; margin-right: 10px">
-                    <i data-feather="clipboard" class="center-button-icon"></i>
-                    Copy in BibTex
-                </button>
-
-                <button onclick="copyText('ris_cite')" class="btn btn-light btn-sm" style="border-radius: 5px;">
-                    <i data-feather="clipboard" class="center-button-icon"></i>
-                    Copy in RIS
-                </button>
-
-                <button onclick="copyText('apa_cite')" class="btn btn-light btn-sm" style="border-radius: 5px;">
-                    <i data-feather="clipboard" class="center-button-icon"></i>
-                    Copy in APA
-                </button>
-
-                <button onclick="copyText('text_cite')" class="btn btn-light btn-sm" style="border-radius: 5px;">
-                    <i data-feather="clipboard" class="center-button-icon"></i>
-                    Copy in text
-                </button>
-
-            </div>
-
-        </div>
-
-
     </div>
 
     <div class="col-xl-4 col-lg-12 col-md-12 col-sm-12">
@@ -256,9 +213,8 @@
             </div>
             
 
-            {% for feature_model in dataset.feature_models %}
-                {% for file in feature_model.files %}
-                    <div class="list-group-item">
+            {% for file in dataset.files() %}
+                <div class="list-group-item">
                         
                         <div class="row">
                             <div class="col-12">
@@ -283,52 +239,15 @@
                                     <i data-feather="eye"></i> View
                                 </button>
 
-                                <div class="btn-group" role="group">
-                                    <button id="btnGroupDrop{{ file.id }}" type="button" class="btn btn-outline-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" style=" border-radius: 5px;">
-                                        <i data-feather="check"></i> Check
-                                    </button>
-                                    <ul class="dropdown-menu" aria-labelledby="btnGroupDrop{{ file.id }}">
-                                        <!-- Syntax check removed for CSV-only datasets -->
-                                        <!--
-                                        <li>
-                                            <a class="dropdown-item" href="{{ url_for('flamapy.valid', file_id=file.id) }}">SAT validity check</a>
-                                        </li>
-                                        -->
-                                    </ul>
-                                </div>
-                                
-                                <div class="btn-group" role="group">
-                                    <button id="btnGroupDropExport{{ file.id }}" type="button" class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" style=" border-radius: 5px;">
-                                        <i data-feather="download"></i> Export
-                                    </button>
-                                    <ul class="dropdown-menu" aria-labelledby="btnGroupDropExport{{ file.id }}">
-                                        <li>
-                                                <a class="dropdown-item" href="{{ url_for('hubfile.download_file', file_id=file.id) }}">
-                                                    CSV
-                                                </a>
-                                            <a class="dropdown-item" href="{{ url_for('flamapy.to_glencoe', file_id=file.id) }}">
-                                                Glencoe
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a class="dropdown-item" href="{{ url_for('flamapy.to_cnf', file_id=file.id) }}">
-                                                DIMACS
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a class="dropdown-item" href="{{ url_for('flamapy.to_splot', file_id=file.id) }}">
-                                                SPLOT
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </div>
+                                <a class="btn btn-primary btn-sm" href="{{ url_for('hubfile.download_file', file_id=file.id) }}" style="border-radius: 5px;">
+                                    <i data-feather="download"></i> Download CSV
+                                </a>
                                 
                                 
 
                             </div>
                         </div>
-                    </div>
-                {% endfor %}
+                </div>
             {% endfor %}
         </div>
         
@@ -351,7 +270,7 @@
     <div class="modal-dialog modal-lg" style="height: 80vh; display: flex; align-items: center;">
         <div class="modal-content" style="height: 80vh;">
             <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
-                <h5 class="modal-title" id="fileViewerModalLabel">Feature model view</h5>
+                <h5 class="modal-title" id="fileViewerModalLabel">CSV file view</h5>
                 <div>
                     <a href="#" class="btn btn-outline-primary btn-sm" id="downloadButton"
                         style="margin-right: 5px; margin-bottom: 5px; border-radius: 5px;">

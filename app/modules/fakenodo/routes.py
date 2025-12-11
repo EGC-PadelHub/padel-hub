@@ -48,10 +48,10 @@ def test_connection_fakenodo():
     return jsonify(response), 200
 
 
-# List all depositions
+# List all depositions (return list directly as Zenodo does)
 @fakenodo_module.route("/deposit/depositions", methods=["GET"])
 def get_all_depositions():
-    return jsonify({"depositions": list(_STATE["records"].values())}), 200
+    return jsonify(list(_STATE["records"].values())), 200
 
 
 # Create deposition
@@ -113,7 +113,15 @@ def upload_file(deposition_id):
     if not record:
         return jsonify({"message": "Deposition not found"}), 404
 
-    filename = request.form.get("filename") or request.form.get("name") or "unnamed_file"
+    # Get filename from form data or from uploaded file
+    filename = request.form.get("filename") or request.form.get("name")
+    if not filename and request.files:
+        # If filename not in form, get it from the uploaded file
+        file = list(request.files.values())[0] if request.files else None
+        filename = file.filename if file else "unnamed_file"
+    if not filename:
+        filename = "unnamed_file"
+    
     # dedupe by filename
     record["files"] = [f for f in record["files"] if f.get("filename") != filename]
     record["files"].append({"filename": filename})
@@ -144,14 +152,16 @@ def publish_deposition(deposition_id):
         }
         _STATE["records"][new_rec_id] = new_record
         _add_version(conceptrecid, new_rec_id)
-        return jsonify({"id": new_rec_id, "doi": new_record["doi"], "conceptrecid": conceptrecid}), 202
+        # Return the full new record as Zenodo does
+        return jsonify(new_record), 202
 
     # First publish or metadata-only change
     if not record.get("doi"):
         record["doi"] = f"10.5072/fakenodo.{deposition_id}"
     record["published"] = True
     record["files_modified"] = False
-    return jsonify({"id": deposition_id, "doi": record["doi"], "conceptrecid": record["conceptrecid"]}), 202
+    # Return the full record as Zenodo does, which includes id, doi, conceptrecid and metadata
+    return jsonify(record), 202
 
 
 # List versions for a concept

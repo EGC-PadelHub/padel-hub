@@ -33,7 +33,7 @@ from app.modules.dataset.services import (
     DSMetaDataService,
     DSViewRecordService,
 )
-from app.modules.zenodo.services import ZenodoService
+from app.modules.fakenodo.services import FakenodoService
 from app.modules.dataset.types.tabular import TabularDataset
 
 # Optional imports for feature model conversions
@@ -51,7 +51,7 @@ logger = logging.getLogger(__name__)
 dataset_service = DataSetService()
 author_service = AuthorService()
 dsmetadata_service = DSMetaDataService()
-zenodo_service = ZenodoService()
+zenodo_service = FakenodoService()  # Using fakenodo instead of real Zenodo
 doi_mapping_service = DOIMappingService()
 ds_view_record_service = DSViewRecordService()
 

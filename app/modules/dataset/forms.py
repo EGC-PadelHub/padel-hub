@@ -116,9 +116,9 @@ class DataSetForm(FlaskForm):
     upload_type = RadioField(
         "Upload type",
         choices=[
-            ("public", "Permanent upload to Zenodo"),
-            ("anonymous", "Permanent (anonymous) upload to Zenodo"),
-            ("draft", "Draft")
+            ("public", "Public dataset (published and visible to all)"),
+            ("anonymous", "Anonymous public dataset"),
+            ("draft", "Draft (not published)")
         ],
         default="public",
     )

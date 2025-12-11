@@ -1,53 +1,92 @@
 # Fakenodo (Mock Zenodo in‑process)
 
 ## 1. Qué es
-Fakenodo es un **simulador mínimo de la API de Zenodo** integrado como *blueprint* (`/fakenodo`) dentro de la app Flask. No persiste nada: todos los depósitos y archivos viven solo en memoria (RAM) mientras el proceso está activo. Sirve para **desarrollar y testear** el flujo de publicación de datasets sin internet, sin token ni infraestructura externa.
+Fakenodo es un **simulador mínimo de la API de Zenodo** integrado como *blueprint* (`/fakenodo/api`) dentro de la app Flask. No persiste nada: todos los depósitos y archivos viven solo en memoria (RAM) mientras el proceso está activo. Sirve para **desarrollar y testear** el flujo de publicación de datasets sin internet, sin token ni infraestructura externa.
+
+**Características principales:**
+- ✅ Simula endpoints básicos de Zenodo API
+- ✅ Gestión de versiones (metadata-only vs cambio de archivos)
+- ✅ Generación de DOIs fake (formato: `10.5072/fakenodo.<id>`)
+- ✅ No requiere configuración externa ni tokens
+- ✅ Ideal para desarrollo local y CI/CD
 
 ## 2. Activación rápida
-Se activa automáticamente en desarrollo (por defecto `UPLOADS_USE_FAKENODO_ONLY=true`). Asegura las variables:
+
+### Desarrollo Local
+Se activa automáticamente en desarrollo (por defecto `UPLOADS_USE_FAKENODO_ONLY=true`). Variables en `.env`:
 
 ```bash
-export FLASK_APP=app
-export FLASK_ENV=development
-export UPLOADS_USE_FAKENODO_ONLY=true
-export FAKENODO_URL="http://127.0.0.1:5000/fakenodo/depositions"
-flask run
+FLASK_ENV=development
+UPLOADS_USE_FAKENODO_ONLY=true
+FAKENODO_HOSTNAME=127.0.0.1
 ```
 
-Para usar Zenodo real desactiva:
+**Nota:** `FAKENODO_URL` no es necesaria; `ZenodoService` construye automáticamente la URL usando `FAKENODO_HOSTNAME`.
+
+### Docker
+En Docker, el hostname debe apuntar al contenedor `web`:
+
+```bash
+FAKENODO_HOSTNAME=web  # Configurado automáticamente en docker-compose.*.yml
+```
+
+### Usar Zenodo Real
+Para desactivar fakenodo y usar Zenodo real:
 
 ```bash
 export UPLOADS_USE_FAKENODO_ONLY=false
-# Requiere: export ZENODO_ACCESS_TOKEN=... y ZENODO_API_URL=...
+export ZENODO_ACCESS_TOKEN=tu_token_aqui
+export ZENODO_API_URL=https://sandbox.zenodo.org/api/deposit/depositions
 ```
 
-## 3. Endpoints mínimos
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| POST | `/fakenodo/depositions` | Crear deposición (state=draft, doi=null) |
-| GET  | `/fakenodo/depositions` | Listar todas |
-| GET  | `/fakenodo/depositions/<id>` | Ver una deposición |
-| POST | `/fakenodo/depositions/<id>/files` | Registrar nombre de archivo (no guarda contenido) |
-| POST | `/fakenodo/depositions/<id>/actions/publish` | Publicar y asignar DOI fake |
-| GET  | `/fakenodo/status` | Estado: número de registros |
+## 3. Endpoints implementados
 
-DOI generado: `10.5072/fakenodo.<id>`
+Todos los endpoints están bajo el prefijo `/fakenodo/api`:
+
+| Método | Endpoint | Descripción | Respuesta |
+|--------|----------|-------------|-----------|
+| GET | `/fakenodo/api` | Test de conexión | `{"status": "success", "message": "Connected to FakenodoAPI"}` |
+| POST | `/fakenodo/api/deposit/depositions` | Crear deposición | `{"id": 1, "conceptrecid": 1, "metadata": {...}, "files": [], "doi": null, "published": false}` |
+| GET  | `/fakenodo/api/deposit/depositions` | Listar todas las deposiciones | `[{...}, {...}]` (lista directa) |
+| GET  | `/fakenodo/api/deposit/depositions/<id>` | Obtener deposición específica | `{"id": 1, "doi": "10.5072/fakenodo.1", ...}` |
+| PUT  | `/fakenodo/api/deposit/depositions/<id>` | Actualizar metadata (no cambia DOI) | `{"id": 1, "metadata": {...updated...}}` |
+| POST | `/fakenodo/api/deposit/depositions/<id>/files` | Subir archivo (solo registra nombre) | `{"filename": "file.uvl", "link": "..."}` |
+| POST | `/fakenodo/api/deposit/depositions/<id>/actions/publish` | Publicar deposición | `{"id": 1, "doi": "10.5072/fakenodo.1", "conceptrecid": 1, ...}` |
+| GET  | `/fakenodo/api/deposit/depositions/<id>/versions` | Listar versiones del concept | `{"versions": [{...}, {...}]}` |
+| DELETE | `/fakenodo/api/deposit/depositions/<id>` | Eliminar deposición | `{"message": "Deposition deleted"}` |
+
+**DOI generado:** `10.5072/fakenodo.<id>`
+
+### Lógica de versiones
+- **Metadata-only update:** Usar `PUT` + `POST publish` → **mismo DOI**, no crea nueva versión
+- **Cambio de archivos:** `POST files` + `POST publish` después de publicar → **nuevo DOI**, nueva versión con nuevo ID
+- Todas las versiones comparten el mismo `conceptrecid`
 
 ## 4. Flujo básico
-1. Crear deposición (draft).  
-2. Subir (registrar) archivos.  
-3. Publicar (asigna DOI y cambia `state`).  
-4. Consultar para ver el DOI.  
-5. (Opcional) `GET /fakenodo/status` para ver cantidad.
+1. **Crear deposición** (draft, sin DOI)
+2. **Subir archivos** (registra nombres, no guarda contenido binario)
+3. **Publicar** (asigna DOI y marca como published)
+4. **Consultar** para verificar el DOI generado
+5. **(Opcional)** Modificar metadata → republicar mantiene mismo DOI
+6. **(Opcional)** Agregar/cambiar archivos → republicar crea nueva versión con nuevo DOI
 
 ## 5. Verificación rápida (cURL)
-```bash
-# 1. Crear
-curl -s -X POST http://127.0.0.1:5000/fakenodo/depositions \
-  -H 'Content-Type: application/json' \
-  -d '{"metadata": {"title": "Demo", "upload_type": "dataset"}}' | jq
 
-# 2. Subir archivo (solo nombre)
+### Test de conexión
+```bash
+curl -s http://127.0.0.1:5000/fakenodo/api | jq
+```
+
+### Flujo completo
+```bash
+# 1. Crear deposición
+DEP=$(curl -s -X POST http://127.0.0.1:5000/fakenodo/api/deposit/depositions \
+  -H 'Content-Type: application/json' \
+  -d '{"metadata": {"title": "Test Dataset", "upload_type": "dataset", "description": "Prueba", "creators": [{"name": "Test User"}]}}')
+echo $DEP | jq
+ID=$(echo $DEP | jq -r '.id')
+
+# 2. Subir archivo
 curl -s -X POST http://127.0.0.1:5000/fakenodo/depositions/1/files \
   -F name=test.txt -F file=@/etc/hosts | jq
 

@@ -3,7 +3,7 @@ import pytest
 from app import db
 from app.modules.auth.models import User
 from app.modules.dataset.models import DataSet, DSMetaData, Author, TournamentType
-from app.modules.zenodo.services import ZenodoService
+from app.modules.fakenodo.services import FakenodoService
 
 
 def login_client(test_client):
@@ -58,7 +58,7 @@ def test_create_new_deposition_sends_anonymous_creator(monkeypatch, test_client)
 
     monkeypatch.setattr("requests.post", fake_post)
 
-    svc = ZenodoService()
+    svc = FakenodoService()
     resp = svc.create_new_deposition(dataset)
 
     assert resp.get("id") == 10
@@ -90,7 +90,7 @@ def test_create_new_deposition_includes_real_authors(monkeypatch, test_client):
 
     monkeypatch.setattr("requests.post", fake_post)
 
-    svc = ZenodoService()
+    svc = FakenodoService()
     resp = svc.create_new_deposition(dataset)
 
     assert resp.get("id") == 11

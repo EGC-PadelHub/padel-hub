@@ -47,6 +47,9 @@ class TestDatasetExport:
         return dataset
 
     def test_export_zip_contains_converted_formats(self, test_client):
+        # Ensure WORKING_DIR is set for the entire test
+        os.environ.setdefault("WORKING_DIR", os.getcwd())
+        
         # By default, tests create a user with id=1 in conftest
         user_id = 1
         dataset = self._create_dataset_with_csv(user_id)
@@ -60,9 +63,12 @@ class TestDatasetExport:
         data = b"".join(resp.response)
         zf = zipfile.ZipFile(io.BytesIO(data))
         names = zf.namelist()
+        
+        # Debug: print what's actually in the zip
+        print(f"DEBUG: Files in zip: {names}")
 
         # Expect CSV copy and JSON/XML; XLSX may be skipped if openpyxl missing
-        assert any(n.endswith("/csv/data.csv") for n in names)
+        assert any(n.endswith("/csv/data.csv") for n in names), f"CSV not found. Files in zip: {names}"
         assert any(n.endswith("/json/data.json") for n in names)
         assert any(n.endswith("/xml/data.xml") for n in names)
         assert any(n.endswith("/tsv/data.tsv") for n in names)

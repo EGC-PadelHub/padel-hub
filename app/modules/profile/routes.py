@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 @login_required
 def edit_profile():
     auth_service = AuthenticationService()
-    profile = auth_service.get_authenticated_user_profile
+    profile = auth_service.get_authenticated_user_profile()
     if not profile:
         return redirect(url_for("public.index"))
 

@@ -16,21 +16,29 @@ depends_on = None
 
 
 def upgrade():
-    # Update the enum type for ds_meta_data.publication_type
-    op.execute("""
-        ALTER TABLE ds_meta_data
-        MODIFY COLUMN publication_type
-        ENUM('NONE', 'MASTER_FINAL', 'MASTER', 'OPEN', 'QUALIFYING', 'NATIONAL_TOURS', 'OTHER')
-        NOT NULL
-    """)
+    import sqlalchemy as sa
+    connection = op.get_bind()
+    inspector = sa.inspect(connection)
+    tables = inspector.get_table_names()
+    
+    # Update the enum type for ds_meta_data.publication_type (if column exists)
+    ds_columns = [col['name'] for col in inspector.get_columns('ds_meta_data')]
+    if 'publication_type' in ds_columns:
+        op.execute("""
+            ALTER TABLE ds_meta_data
+            MODIFY COLUMN publication_type
+            ENUM('NONE', 'MASTER_FINAL', 'MASTER', 'OPEN', 'QUALIFYING', 'NATIONAL_TOURS', 'OTHER')
+            NOT NULL
+        """)
 
-    # Update the enum type for fm_meta_data.publication_type
-    op.execute("""
-        ALTER TABLE fm_meta_data
-        MODIFY COLUMN publication_type
-        ENUM('NONE', 'MASTER_FINAL', 'MASTER', 'OPEN', 'QUALIFYING', 'NATIONAL_TOURS', 'OTHER')
-        NOT NULL
-    """)
+    # Update the enum type for fm_meta_data.publication_type (if table exists)
+    if 'fm_meta_data' in tables:
+        op.execute("""
+            ALTER TABLE fm_meta_data
+            MODIFY COLUMN publication_type
+            ENUM('NONE', 'MASTER_FINAL', 'MASTER', 'OPEN', 'QUALIFYING', 'NATIONAL_TOURS', 'OTHER')
+            NOT NULL
+        """)
 
 
 def downgrade():

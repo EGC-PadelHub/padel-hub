@@ -14,7 +14,8 @@ class HubfileRepository(BaseRepository):
     def get_owner_user_by_hubfile(self, hubfile: Hubfile) -> User:
         return (
             db.session.query(User)
-            .join(DataSet, Hubfile.dataset_id == DataSet.id)
+            .join(DataSet, DataSet.user_id == User.id)
+            .join(Hubfile, Hubfile.dataset_id == DataSet.id)
             .filter(Hubfile.id == hubfile.id)
             .first()
         )

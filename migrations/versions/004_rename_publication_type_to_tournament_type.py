@@ -16,13 +16,23 @@ depends_on = None
 
 
 def upgrade():
-    # Rename column in ds_meta_data table
-    op.execute("ALTER TABLE ds_meta_data CHANGE COLUMN publication_type tournament_type "
-               "ENUM('NONE', 'MASTER_FINAL', 'MASTER', 'OPEN', 'QUALIFYING', 'NATIONAL_TOURS', 'OTHER') NOT NULL")
+    import sqlalchemy as sa
+    connection = op.get_bind()
+    inspector = sa.inspect(connection)
+    tables = inspector.get_table_names()
+    
+    # Rename column in ds_meta_data table (only if publication_type exists)
+    ds_columns = [col['name'] for col in inspector.get_columns('ds_meta_data')]
+    if 'publication_type' in ds_columns:
+        op.execute("ALTER TABLE ds_meta_data CHANGE COLUMN publication_type tournament_type "
+                   "ENUM('NONE', 'MASTER_FINAL', 'MASTER', 'OPEN', 'QUALIFYING', 'NATIONAL_TOURS', 'OTHER') NOT NULL")
 
-    # Rename column in fm_meta_data table
-    op.execute("ALTER TABLE fm_meta_data CHANGE COLUMN publication_type tournament_type "
-               "ENUM('NONE', 'MASTER_FINAL', 'MASTER', 'OPEN', 'QUALIFYING', 'NATIONAL_TOURS', 'OTHER') NOT NULL")
+    # Rename column in fm_meta_data table (only if table exists)
+    if 'fm_meta_data' in tables:
+        fm_columns = [col['name'] for col in inspector.get_columns('fm_meta_data')]
+        if 'publication_type' in fm_columns:
+            op.execute("ALTER TABLE fm_meta_data CHANGE COLUMN publication_type tournament_type "
+                       "ENUM('NONE', 'MASTER_FINAL', 'MASTER', 'OPEN', 'QUALIFYING', 'NATIONAL_TOURS', 'OTHER') NOT NULL")
 
 
 def downgrade():

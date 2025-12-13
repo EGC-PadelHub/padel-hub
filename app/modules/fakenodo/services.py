@@ -40,7 +40,8 @@ class FakenodoService(BaseService):
 
     def create_new_deposition(self, dataset: DataSet) -> dict:
         """Create a fake deposition - NO REAL API CALL."""
-        deposition_id = next(self._counter)
+        # Use dataset.id to ensure unique deposition IDs
+        deposition_id = dataset.id
         logger.info(f"Creating FAKE deposition for dataset {dataset.id} with ID {deposition_id}")
         
         # Return fake response matching Zenodo format

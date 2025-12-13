@@ -28,15 +28,18 @@ def upgrade():
         # Add dataset_id column as nullable first
         op.add_column('file', sa.Column('dataset_id', sa.Integer(), nullable=True))
         
-        # Migrate data: set dataset_id from feature_model relationship
-        connection.execute(sa.text("""
-            UPDATE file 
-            INNER JOIN feature_model ON file.feature_model_id = feature_model.id
-            SET file.dataset_id = feature_model.data_set_id
-        """))
+        # Check if feature_model table exists and has data to migrate
+        tables = inspector.get_table_names()
+        if 'feature_model' in tables and 'feature_model_id' in columns:
+            # Migrate data: set dataset_id from feature_model relationship
+            connection.execute(sa.text("""
+                UPDATE file 
+                INNER JOIN feature_model ON file.feature_model_id = feature_model.id
+                SET file.dataset_id = feature_model.data_set_id
+            """))
         
-        # Now make dataset_id NOT NULL
-        op.alter_column('file', 'dataset_id', nullable=False)
+        # Now make dataset_id NOT NULL (requires existing_type for MySQL)
+        op.alter_column('file', 'dataset_id', nullable=False, existing_type=sa.Integer())
     
     # Remove foreign key constraint from file table if exists
     try:

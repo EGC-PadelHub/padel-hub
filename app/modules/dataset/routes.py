@@ -32,9 +32,12 @@ from app.modules.dataset.services import (
     DSDownloadRecordService,
     DSMetaDataService,
     DSViewRecordService,
+    calculate_checksum_and_size,
 )
 from app.modules.fakenodo.services import FakenodoService
 from app.modules.dataset.types.tabular import TabularDataset
+from app.modules.hubfile.models import Hubfile
+from app import db
 
 logger = logging.getLogger(__name__)
 
@@ -104,10 +107,51 @@ def create_dataset():
                 msg = f"it has not been possible to publish to Zenodo and update the DOI: {e}"
                 return jsonify({"message": msg}), 200
 
-        # Delete temp folder
-        file_path = current_user.temp_folder()
-        if os.path.exists(file_path) and os.path.isdir(file_path):
-            shutil.rmtree(file_path)
+        # Move files from temp folder to dataset folder and create Hubfile records
+        temp_folder = current_user.temp_folder()
+        logger.info(f"Temp folder path: {temp_folder}")
+        logger.info(f"Temp folder exists: {os.path.exists(temp_folder)}")
+        if os.path.exists(temp_folder):
+            logger.info(f"Temp folder contents: {os.listdir(temp_folder)}")
+        
+        if os.path.exists(temp_folder) and os.path.isdir(temp_folder):
+            # Create destination folder for this dataset
+            working_dir = os.getenv("WORKING_DIR", "")
+            dest_folder = os.path.join(working_dir, "uploads", f"user_{current_user.id}", f"dataset_{dataset.id}")
+            logger.info(f"Destination folder: {dest_folder}")
+            os.makedirs(dest_folder, exist_ok=True)
+            
+            # Process each file in temp folder
+            files_found = os.listdir(temp_folder)
+            logger.info(f"Files in temp folder: {files_found}")
+            for filename in files_found:
+                if filename.lower().endswith('.csv'):
+                    src_path = os.path.join(temp_folder, filename)
+                    dest_path = os.path.join(dest_folder, filename)
+                    logger.info(f"Moving {src_path} to {dest_path}")
+                    
+                    # Move file to destination
+                    shutil.move(src_path, dest_path)
+                    
+                    # Calculate checksum and size
+                    checksum, size = calculate_checksum_and_size(dest_path)
+                    logger.info(f"Created Hubfile: {filename}, size={size}, dataset_id={dataset.id}")
+                    
+                    # Create Hubfile record
+                    hubfile = Hubfile(
+                        name=filename,
+                        checksum=checksum,
+                        size=size,
+                        dataset_id=dataset.id,
+                    )
+                    db.session.add(hubfile)
+            
+            db.session.commit()
+            
+            # Delete remaining temp folder
+            shutil.rmtree(temp_folder)
+        else:
+            logger.warning(f"Temp folder does not exist or is not a directory: {temp_folder}")
 
         msg = "Everything works!"
         return jsonify({"message": msg}), 200

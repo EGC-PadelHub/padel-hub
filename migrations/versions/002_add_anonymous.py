@@ -18,12 +18,18 @@ depends_on = None
 
 def upgrade():
     # Add anonymous boolean column to ds_meta_data with default False
-    op.add_column(
-        'ds_meta_data',
-        sa.Column('anonymous', sa.Boolean(), nullable=False, server_default=sa.text('0')),
-    )
-    # remove server default to keep schema clean
-    op.alter_column('ds_meta_data', 'anonymous', server_default=None)
+    # Check if column already exists first
+    connection = op.get_bind()
+    inspector = sa.inspect(connection)
+    columns = [col['name'] for col in inspector.get_columns('ds_meta_data')]
+    
+    if 'anonymous' not in columns:
+        op.add_column(
+            'ds_meta_data',
+            sa.Column('anonymous', sa.Boolean(), nullable=False, server_default=sa.text('0')),
+        )
+        # remove server default to keep schema clean
+        op.alter_column('ds_meta_data', 'anonymous', server_default=None, existing_type=sa.Boolean())
 
 
 def downgrade():

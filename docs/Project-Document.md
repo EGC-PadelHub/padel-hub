@@ -27,27 +27,28 @@
 
 | Miembro | Horas | Commits | LoC | Test | Issues | Work Items Principales | Dificultad |
 |---------|-------|---------|-----|------|--------|------------------------|-----------|
-| [Dorantes Ruiz, Celia del Pilar](https://github.com/celdorrui) | 85 | 20 | 1531 | 21 |  |  |  |
-| [Linares Borrego, Guillermo](https://github.com/Glinbor10) | 95 | 27 | 17391 | 59 |  |  |  |
-| [Pallarés González, Javier](https://github.com/javpalgon) | 70 | 16 | 625 | 27 |  |  |  |
-| [Silva Guzmán, José María](https://github.com/jossilguz) | 55 | 8 | 1376 | 5 |  |  |  |
-| [Zafra Ruiz, Darío](https://github.com/darzafrui) | 60 | 11 | 14633 | 44 |  |  |  |
-| **TOTAL** | **365** | **82** | **35556** | **156** |  |  |  |
+| [Dorantes Ruiz, Celia del Pilar](https://github.com/celdorrui) | 90 | 23 | 1,559 | 21 | 7 | Metrics dashboard | Medium |
+| [Linares Borrego, Guillermo](https://github.com/Glinbor10) | 110 | 32 | 18,210 | 63 | 8 | Upload, analyse and repair Padel CSVs | High |
+| [Pallarés González, Javier](https://github.com/javpalgon) | 95 | 29 | 679 | 27 | 9 | Advanced dataset search | Medium |
+| [Silva Guzmán, José María](https://github.com/jossilguz) | 75 | 22 | 826 | 7 | 5 | Anonymize dataset | High |
+| [Zafra Ruiz, Darío](https://github.com/darzafrui) | 85 | 20 | 14,603 | 51 | 9 | Download in different formats | Medium |
+| **TOTAL** | **455** | **126** | **35,877** | **169** | **38** |  |  |
 
 **Cómo se calcularon estas métricas:**
 
 📊 **[Ver métricas detalladas y comandos utilizados](metrics-summary.md)**
 
-Las métricas de Commits, LoC y Test se obtuvieron mediante comandos Git documentados:
+Las métricas de Commits, LoC, Test e Issues se obtuvieron mediante comandos Git documentados:
 
 - **Commits:** `git log --all --pretty="%an" | sort | uniq -c` → [Ver log](metrics-commits.log)
-- **LoC (Lines of Code):** `git log --author="nombre" --numstat` analizado con awk → [Ver log detallado](metrics-detailed.log)
-- **Test:** Conteo de funciones `def test_` en commits de cada autor → [Ver log de tests](metrics-tests.log)
+- **LoC (Lines of Code):** `git log --author="nombre" --numstat` analizado con awk → [Ver log](metrics-detailed.log)
+- **Test e Issues:** Conteo de funciones `def test_` y datos de GitHub Projects (incluye ZenHub migradas) → [Ver log](metrics-tests.log)
 
 **Notas sobre las métricas:**
 - **Horas:** Estimación basada en commits, revisiones de código, reuniones y desarrollo
 - **LoC:** Líneas de código netas (añadidas - eliminadas) por cada autor según git log. **Nota:** Las cifras de Guillermo Linares Borrego y Darío Zafra Ruiz incluyen documentación extensa (plantillas de CONTRIBUTING, guías, logs de métricas) y archivos de configuración de workflows, lo que explica el volumen elevado
 - **Test:** Aproximación de funciones de test añadidas (def test_*) en archivos Python
+- **Issues:** Issues únicas cerradas por cada autor (commits con "Closes #número")
 - **Issues:** Issues formales desde 26/11/2025 con cierre automático vía "Closes #"
 - **Dificultad:** H (High) = implementaciones complejas con CI/CD/arquitectura, M (Medium) = features y testing estándar, L (Low) = correcciones menores
 
@@ -57,12 +58,12 @@ Las métricas de Commits, LoC y Test se obtuvieron mediante comandos Git documen
 - [GitHub Actions Workflows](https://github.com/EGC-PadelHub/padel-hub/actions)
 - [Codacy Dashboard](https://app.codacy.com/gh/EGC-PadelHub/padel-hub/dashboard)
 
-### Datos Clave
+**Datos Clave**
 
 * **Archivos Python:** 121 archivos
-* **Total Commits:** 82 (trabajo inicial + issues formales)
-* **Issues Formales:** 16 (implementadas desde 26/11/2025)
-* **Ramas Principales:** main, trunk, bugfix
+* **Total Commits:** 126 (repositorio completo)
+* **Issues Cerradas:** 38 (GitHub Projects - incluye ZenHub migradas)
+* **Ramas Principales:** main, trunk, bugfix, feature/*, docs/*
 * **Versión Actual:** v12.0.0
 
 ---
@@ -83,15 +84,15 @@ El proyecto implementa un sistema robusto de validación de CSV con 21 columnas 
 
 Las funcionalidades de búsqueda y filtrado permiten explorar datasets por múltiples criterios: torneos, jugadores, categorías, rangos de fechas, descripciones y tags. El sistema soporta exportación a 7 formatos diferentes (CSV, JSON, XML, XLSX, TSV, YAML, TXT) facilitando la integración con herramientas de análisis externas. Un dashboard de métricas proporciona visualización en tiempo real de estadísticas de torneos y jugadores.
 
-La integración con Zenodo garantiza almacenamiento permanente de datasets con asignación automática de DOI (Digital Object Identifier), permitiendo la citación académica de los datos. Durante el desarrollo se implementó Fakenodo, un simulador local de la API de Zenodo que facilita el testing sin dependencias externas.
+El sistema implementa **Fakenodo**, un simulador local de la API de Zenodo que facilita el testing sin dependencias externas. En producción, permitiría la integración con Zenodo para almacenamiento permanente de datasets y asignación automática de DOI (Digital Object Identifier), habilitando la citación académica de los datos.
 
 **Arquitectura y Stack Tecnológico**
 
-El sistema está construido sobre una arquitectura modular basada en Flask (Python 3.12) con MariaDB 5.7 para persistencia, Nginx como servidor web en ambiente Docker, y despliegue en Render.com para producción. La estructura modular de 13 módulos independientes (auth, dataset, explore, fakenodo, profile, zenodo, etc.) facilita el mantenimiento y permite la evolución independiente de cada componente.
+El sistema está construido sobre una arquitectura modular basada en Flask (Python 3.12) con MariaDB 5.7 para persistencia, Nginx como servidor web en ambiente Docker, y despliegue en Render.com para producción. La estructura modular de 13 módulos independientes incluye: auth, dataset, explore, **fakenodo** (simulador de Zenodo usado en desarrollo/producción actual), profile, zenodo (módulo preparado para integración futura con Zenodo real), etc. Esta separación facilita el mantenimiento y permite la evolución independiente de cada componente, incluyendo la migración futura a Zenodo real sin cambios estructurales.
 
 **Proceso de Desarrollo y Herramientas**
 
-El equipo de 5 miembros ha invertido 365 horas de trabajo colectivo, produciendo 14,050 líneas de código y 75 tests automatizados. Se implementó un pipeline completo de CI/CD con GitHub Actions que incluye: testing automático con MySQL en cada push, análisis de calidad con Codacy, deployment automático a preproducción (trunk) y producción (main), y versionado semántico inteligente basado en Conventional Commits.
+El equipo de 5 miembros ha invertido 455 horas de trabajo colectivo, produciendo 35,877 líneas de código neto y 169 tests automatizados. Se implementó un pipeline completo de CI/CD con GitHub Actions que incluye: testing automático con MySQL en cada push, análisis de calidad con Codacy, deployment automático a preproducción (trunk) y producción (main), y versionado semántico inteligente basado en Conventional Commits.
 
 El sistema de versionado automático representa una innovación destacable: los commits tipo `feat:` incrementan la versión MAJOR y despliegan con GitHub Release, `fix:` incrementa MINOR y despliega sin release, y `docs:` incrementa PATCH pero NO despliega (optimizando recursos). Este enfoque garantiza que cambios solo de documentación no generen despliegues innecesarios.
 
@@ -99,9 +100,9 @@ Se estableció una estrategia rigurosa de branching (main para producción, trun
 
 **Resultados y Logros**
 
-Se completaron exitosamente 14 issues formales (más trabajo extenso pre-formalización de issues), con distribución equitativa de dificultad (2 High, 3 Medium). El equipo implementó testing exhaustivo: 75 tests unitarios y E2E con Selenium para flujos críticos (validación CSV, anonimización, dashboard, Fakenodo), y load testing con Locust para evaluar rendimiento bajo carga.
+Se completaron exitosamente 38 issues gestionadas en GitHub Projects (incluyendo issues migradas de ZenHub del período Octubre-Noviembre 2024). El equipo implementó testing exhaustivo: 169 tests automatizados incluyendo tests unitarios, E2E con Selenium para flujos críticos (validación CSV, anonimización, dashboard, Fakenodo), y load testing con Locust para evaluar rendimiento bajo carga.
 
-La documentación completa incluye guías de contribución (CONTRIBUTING.md), explicación detallada de workflows CI/CD, diario de equipo con 9 actas de reuniones, y documentación técnica de módulos específicos. El proyecto demuestra dominio de herramientas profesionales de desarrollo, prácticas de gestión de configuración, y capacidad de trabajo colaborativo en equipo.
+La documentación completa incluye guías de contribución (CONTRIBUTING.md), explicación detallada de workflows CI/CD, diario de equipo con 10 actas de reuniones, y documentación técnica de módulos específicos. El proyecto demuestra dominio de herramientas profesionales de desarrollo, prácticas de gestión de configuración, y capacidad de trabajo colaborativo en equipo.
 
 ---
 
@@ -126,7 +127,7 @@ PadelHub implementa una arquitectura modular basada en Flask con separación cla
 1. **auth/** - Autenticación y autorización de usuarios
 2. **dataset/** - Gestión y validación de datasets CSV
 3. **explore/** - Exploración y búsqueda de datasets
-4. **fakenodo/** - Simulación de Zenodo para desarrollo
+4. **fakenodo/** - Simulador local de Zenodo (Fakenodo) para desarrollo, testing y producción actual
 5. **hubfile/** - Gestión de ficheros del hub
 6. **profile/** - Perfiles de usuario y estadísticas
 7. **public/** - Páginas públicas
@@ -151,42 +152,63 @@ PadelHub implementa una arquitectura modular basada en Flask con separación cla
 - Múltiples formatos: CSV, JSON, XML, XLSX, TSV, YAML, TXT
 
 #### Dashboard de Métricas
-- Estadísticas de torneos y jugadores
-- Visualización de datos con gráficas
+- Visualización de datos del usuario con gráficas
 - Métricas en tiempo real
 
-#### Integración Zenodo
+#### Integración Fakenodo
 - Almacenamiento permanente de datasets
 - Asignación automática de DOI
 - Sincronización de anonimizados
 
 ### Cambios Implementados en Este Período
 
-**Nota:** El proyecto inicialmente utilizó ZenHub para gestión de issues. Posteriormente se migró a GitHub Projects para aprovechar mejor la integración nativa con GitHub Actions y automatización de workflows. Los cambios listados a continuación corresponden al período de gestión formal con GitHub (desde 26/11/2024).
+#### Issues Gestionadas (GitHub Projects)
 
-#### Issues Formales Gestionadas (GitHub Projects)
+**Total: 38 issues cerradas**
 
-1. **Sistema de Templates y Workflow de Issues (#2)** - Implementación de templates para bug reports, feature requests y documentación
-2. **Workflow de Deployment para Trunk (#3)** - Automatización de deployment a rama trunk
-3. **Sistema de Validación YAML (#5)** - Traducción a inglés e implementación de validación workflow
-4. **Corrección de Sintaxis YAML (#6)** - Fixes en feature request templates
-5. **Fixes de Tests Selenium (#7)** - Corrección de configuración y tests
-6. **Tests Selenium para Fakenodo (#8)** - Implementación de suite completa
-7. **Auto-labeling por Prioridad (#9)** - Sistema automático de etiquetado
-8. **Estructura de Documentación (#10)** - Creación de carpeta docs con documentación en inglés
-9. **Tests CSV y Anonymization (#11)** - Tests Selenium para validación y anonimización
-10. **Dashboard de Métricas (#12)** - Tests Selenium para dashboard
-11. **Scripts Deployment Local/Docker (#13)** - Automatización de deployment
-12. **Filtros Avanzados (#14)** - Descripción, tags, sorting
-13. **Tests Locust de Carga (#15)** - Load testing para módulos críticos
-14. **Workflow Fixes y Documentación (#16)** - Correcciones de CI/CD
+**Issues Directas en GitHub (#2-#21, #32-#38):**
+1. **Issue Templates (#2)** - Sistema de templates para bug reports, feature requests y documentación
+2. **Deploy Trunk on Render (#3)** - Automatización de deployment a rama trunk
+3. **Tournament Type Filter (#4)** - Filtro por tipo de torneo en búsqueda de datasets
+4. **Issue Templates Translation (#5)** - Traducción a inglés e implementación de validación workflow
+5. **Feature Task Display Fix (#6)** - Corrección de visualización de feature tasks
+6. **Selenium Tests Failed (#7)** - Corrección de configuración y tests
+7. **Expand Selenium Fakenodo Coverage (#8)** - Implementación de suite completa para Fakenodo
+8. **Update Templates Priority (#9)** - Sistema automático de etiquetado por prioridad
+9. **Documentation Templates (#10)** - Creación de carpeta docs con documentación académica
+10. **CSV and Anonymization Tests (#11)** - Tests Selenium para validación y anonimización
+11. **Metrics Dashboard Tests (#12)** - Tests Selenium para dashboard de métricas
+12. **Dockerize Application (#13)** - Scripts de deployment local y Docker
+13. **Advanced Filters (#14)** - Filtros de descripción, tags y ordenamiento
+14. **Locust Load Tests (#15)** - Load testing para módulos críticos
+15. **Workflow Fixes and Documentation (#16)** - Correcciones de CI/CD y documentación
+16. **Refactor Fakenodo API (#17)** - Refactorización completa de la API de Fakenodo
+17. **Project Documentation Update (#18)** - Actualización de documentación para entrega académica
+18. **Better Deployment (#19)** - Mejora de scripts de deployment
+19. **Document Template Priority Field (#20)** - Añadir campo de prioridad en templates
+20. **Transfer ZenHub Issues (#21)** - Migración de issues de ZenHub a GitHub
+21. **Fakenodo Sync Production (#32)** - Sincronización de datasets con Fakenodo en producción
+22. **Fix Anonymized Test (#33)** - Corrección de test de anonimización
+23. **Dataset Detail Production (#34)** - Fix de detalle de dataset en producción
+24. **File Previsualization Error (#36)** - Error durante previsualización de archivos
+25. **CSV Files Display (#37)** - Archivos CSV de nuevos datasets no aparecen
+26. **User Profile Update Error (#38)** - Error al actualizar perfil de usuario
 
-**Trabajo Previo (ZenHub - Octubre a Noviembre 2024):**
-- Implementación inicial del sistema base de validación CSV
-- Desarrollo de módulos core (auth, dataset, explore, zenodo)
-- Configuración inicial de Docker y MariaDB
-- Testing inicial con Pytest
-- Estructura base del proyecto Flask
+**Issues Migradas de ZenHub (#22-#31):**
+27. **Real Padel Datasets Integration (#22)** - Integración de datasets reales de torneos de pádel
+28. **Personal Metrics Dashboard (#23)** - Implementación de dashboard personal de métricas
+29. **Remove Unused Folders (#24)** - Eliminación de carpetas 'flamapy' y 'feature_models' no usadas
+30. **CSV Upload and Validation (#25)** - Validación de sintaxis de archivos CSV
+31. **CI/CD Optimization (#26)** - Configuración y optimización de workflows CI/CD
+32. **Download Multiple Formats (#27)** - Descarga de datasets en diferentes formatos
+33. **Fakenodo Sync Fix (#28)** - Corrección de sincronización con Fakenodo en producción
+34. **Anonymize Dataset (#29)** - Implementación de funcionalidad de anonimización
+35. **Fakenodo Mock Service (#30)** - Servicio Fakenodo (simulador de Zenodo) para desarrollo y testing
+35. **Responsive Dashboard (#34)** - Adaptación completa del dashboard a dispositivos móviles para mejorar UX
+36. **Platform Migration (#31)** - Migración de dominio de plataforma de UVLHub a PadelHub
+37. **Comprehensive Documentation Update (#39)** - Actualización completa de documentación para entrega final (15 dic 2024)
+
+**Nota:** Las issues #22-#31 fueron gestionadas inicialmente en ZenHub (Octubre-Noviembre 2025) y posteriormente migradas a GitHub Projects para mantener trazabilidad completa del trabajo realizado.
 
 ---
 

@@ -222,6 +222,31 @@ Complete project documentation for academic submission:
 - **feature/*** - New features (deleted after merge)
 - **document/*** - Documentation updates (deleted after merge)
 
+## ⚠️ Production Limitations and Known Issues
+
+### Database Reset in Production
+
+**Issue:** Datasets uploaded by users may become inaccessible or appear empty after database resets in production.
+
+**Root Causes:**
+- **Render.com Free Tier:** The application uses Render.com's free hosting tier, which includes automatic database resets that can occur during maintenance windows or when resources are freed
+- **Fakenodo Integration:** PadelHub integrates with Fakenodo (a mock Zenodo API) for development and testing purposes. In production, this can cause data inconsistency if the integration isn't properly isolated
+
+**Impact:**
+- Historical datasets uploaded by users may show as empty after a database reset
+- Users won't be able to download previously uploaded CSV files
+- No loss of uploaded files themselves, but metadata and database records are affected
+
+**Recommended Solutions for Production Deployment:**
+1. Upgrade to a paid Render.com tier with persistent database storage
+2. Use a managed database service (e.g., AWS RDS, Azure Database for MySQL)
+3. Implement database backup and restore procedures
+4. Replace Fakenodo with a real Zenodo API integration for production environments
+5. Implement a data persistence strategy with regular backups
+
+**Current Development Status:**
+This is a university project developed as part of a software engineering course. For production use beyond educational purposes, these infrastructure issues should be addressed with proper database management and persistent storage solutions.
+
 ## 📄 License
 
 This project is developed by DiversoLab / EGC-PadelHub.

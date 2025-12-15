@@ -1,20 +1,28 @@
-=== Guillermo Linares Borrego ===
-Commits: 27
-Lines added: 18929 Lines removed: 1538 Net LoC: 17391
+=== RESUMEN DE MÉTRICAS DETALLADAS ===
+Última actualización: 15 de diciembre de 2025 - 12:37 PM
+Estado: Métricas congeladas para entrega final
 
-=== Celia Dorantes ===
-Commits: 20
-Lines added: 1696 Lines removed: 165 Net LoC: 1531
+Commits: 32
+Lines added: 19847 Lines removed: 1637 Net LoC: 18210
+Test functions: 63
 
 === Javier Pallarés González ===
-Commits: 16
-Lines added: 887 Lines removed: 262 Net LoC: 625
+Commits: 29
+Lines added: 1018 Lines removed: 339 Net LoC: 679
+Test functions: 27
 
-=== darzafrui ===
-Commits: 11
-Lines added: 16036 Lines removed: 1403 Net LoC: 14633
+=== Celia Dorantes ===
+Commits: 23
+Lines added: 1765 Lines removed: 206 Net LoC: 1559
+Test functions: 21
 
 === JOSE MARIA SILVA GUZMAN ===
-Commits: 8
-Lines added: 2901 Lines removed: 1525 Net LoC: 1376
+Commits: 22
+Lines added: 3600 Lines removed: 2774 Net LoC: 826
+Test functions: 7
+
+=== darzafrui ===
+Commits: 20
+Lines added: 16633 Lines removed: 2030 Net LoC: 14603
+Test functions: 51
 

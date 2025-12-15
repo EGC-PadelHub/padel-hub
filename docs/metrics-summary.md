@@ -1,128 +1,35 @@
-# Métricas del Proyecto PadelHub
+# Resumen de Métricas - PadelHub
 
-**Generado:** 10 de diciembre de 2025
+**Última actualización:** 15 de diciembre de 2025 - 12:37 PM  
+**Estado:** Métricas congeladas para entrega final. Incluye cambios hasta el commit anterior.
 
-## Resumen por Miembro del Equipo
+## Métricas Generales
 
-### Guillermo Linares Borrego (@Glinbor10)
-- **Commits:** 27
-- **Líneas añadidas:** 18,929
-- **Líneas eliminadas:** 1,538
-- **LoC neto:** 17,391
-- **Archivos de test modificados:** 21
-- **Funciones de test añadidas:** ~59
+- **Total de Commits:** 126
+- **Líneas de Código (LoC):** 35,877 líneas netas
+- **Total de Tests:** 169 funciones de test
+- **Issues Cerradas:** 38
 
-### Celia Dorantes (@celdorrui)
-- **Commits:** 20
-- **Líneas añadidas:** 1,696
-- **Líneas eliminadas:** 165
-- **LoC neto:** 1,531
-- **Archivos de test modificados:** 9
-- **Funciones de test añadidas:** ~21
+## Distribución por Desarrollador
 
-### Javier Pallarés González (@javpalgon)
-- **Commits:** 16
-- **Líneas añadidas:** 887
-- **Líneas eliminadas:** 262
-- **LoC neto:** 625
-- **Archivos de test modificados:** 2
-- **Funciones de test añadidas:** ~27
+| Desarrollador | Commits | LoC Añadidas | LoC Eliminadas | LoC Netas | Tests | Issues |
+|--------------|---------|--------------|----------------|-----------|-------|--------|
+| Guillermo Linares | 32 | 21,679 | 3,469 | 18,210 | 63 | 8 |
+| Javier Pallarés | 29 | 1,350 | 671 | 679 | 27 | 9 |
+| Celia Dorantes | 23 | 2,477 | 918 | 1,559 | 21 | 7 |
+| José María Silva | 22 | 1,383 | 557 | 826 | 7 | 5 |
+| Darío Zafra | 20 | 16,218 | 1,615 | 14,603 | 51 | 9 |
+| **TOTAL** | **126** | **43,107** | **7,230** | **35,877** | **169** | **38** |
 
-### Darío Zafra Ruiz (@darzafrui)
-- **Commits:** 11
-- **Líneas añadidas:** 16,036
-- **Líneas eliminadas:** 1,403
-- **LoC neto:** 14,633
-- **Archivos de test modificados:** 16
-- **Funciones de test añadidas:** ~44
+## Metodología de Conteo
 
-### José María Silva Guzmán (@jossilguz)
-- **Commits:** 8
-- **Líneas añadidas:** 2,901
-- **Líneas eliminadas:** 1,525
-- **LoC neto:** 1,376
-- **Archivos de test modificados:** 2
-- **Funciones de test añadidas:** ~5
+- **Commits:** `git log --all --pretty="%an" | sort | uniq -c` (todos los commits del repositorio)
+- **LoC:** `git log --author="nombre" --numstat` analizado con awk (líneas añadidas - eliminadas)
+- **Tests:** `git log -p | grep "^\+.*def test_"` (funciones de test añadidas)
+- **Issues:** GitHub Projects (incluye issues migradas de ZenHub, período Oct-Dic 2025)
 
----
+## Referencias
 
-## TOTALES DEL PROYECTO
-
-| Métrica | Valor |
-|---------|-------|
-| **Commits totales** | 82 |
-| **Líneas añadidas** | 40,449 |
-| **Líneas eliminadas** | 4,893 |
-| **LoC neto total** | 35,556 |
-| **Archivos de test únicos** | ~50 |
-| **Funciones de test** | ~156 |
-
----
-
-## Comandos Utilizados para Generar Métricas
-
-### 1. Commits por autor
-```bash
-git log --all --pretty="%an" | sort | uniq -c | sort -rn
-```
-
-**Resultado guardado en:** [`metrics-commits.log`](metrics-commits.log)
-
-### 2. Líneas de código por autor
-```bash
-for author in "Guillermo Linares Borrego" "Celia Dorantes" "Javier Pallarés González" "darzafrui" "JOSE MARIA SILVA GUZMAN"; do
-  echo "=== $author ==="
-  echo "Commits: $(git log --all --author="$author" --oneline | wc -l)"
-  git log --all --author="$author" --pretty=tformat: --numstat | \
-    awk '{added+=$1; removed+=$2} END {print "Lines added:", added, "Lines removed:", removed, "Net LoC:", added-removed}'
-  echo ""
-done
-```
-
-**Resultado guardado en:** [`metrics-detailed.log`](metrics-detailed.log)
-
-### 3. Tests por autor
-```bash
-for author in [lista de autores]; do
-  echo "=== $author ==="
-  # Archivos de test modificados
-  git log --all --author="$author" --name-only --pretty=format: | \
-    grep -E "test_.*\.py$|.*_test\.py$" | sort -u | wc -l
-  # Funciones de test añadidas
-  git log --all --author="$author" -p | grep -E "^\+.*def test_" | wc -l
-  echo ""
-done
-```
-
-**Resultado guardado en:** [`metrics-tests.log`](metrics-tests.log)
-
----
-
-## Notas Metodológicas
-
-- **LoC (Lines of Code):** Incluye todos los tipos de archivos (Python, YAML, Markdown, JSON, etc.)
-- **Tests:** Aproximación basada en funciones que comienzan con `def test_` en archivos de test Python
-- **Periodo:** Octubre 2024 - Diciembre 2024
-- **Exclusiones:** No se excluyen dependencias iniciales ni código generado; los números reflejan contribuciones brutas al repositorio
-- **Test files:** Conteo de archivos únicos que contienen `test_` en el nombre o terminan en `_test.py`
-
----
-
-## Verificación
-
-Para verificar estos números en tu máquina local:
-
-```bash
-# Clonar el repositorio
-git clone https://github.com/EGC-PadelHub/padel-hub.git
-cd padel-hub
-
-# Verificar commits totales
-git log --all --oneline | wc -l
-
-# Verificar commits por autor
-git log --all --pretty="%an" | sort | uniq -c | sort -rn
-
-# Ver logs completos
-cat docs/metrics-*.log
-```
+- Detalles de commits: `docs/metrics-commits.log`
+- Análisis detallado de LoC: `docs/metrics-detailed.log`
+- Distribución de tests e issues: `docs/metrics-tests.log`

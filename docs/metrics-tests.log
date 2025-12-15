@@ -1,32 +1,88 @@
-=== Test files and functions by author ===
+RESUMEN DE TESTS E ISSUES POR AUTOR
+====================================
+Última actualización: 15 de diciembre de 2025 - 12:37 PM
+Estado: Métricas congeladas para entrega final
 
-=== Guillermo Linares Borrego ===
-Test files modified:
-21
-Test functions added (approximation):
-59
 
-=== Celia Dorantes ===
-Test files modified:
-9
-Test functions added (approximation):
-21
+GUILLERMO LINARES BORREGO (Glinbor10)
+--------------------------------------
+Tests: 63 funciones de test
 
-=== Javier Pallarés González ===
-Test files modified:
-2
-Test functions added (approximation):
-27
+Issues Cerradas: 7
+  #2  - User Profile Testing
+  #9  - Responsive Design Implementation  
+  #10 - Dataset Synchronization System
+  #18 - Issue Management Enhancement
+  #25 - Integration Testing Framework
+  #26 - Code Quality Improvements
+  #31 - Platform Migration
+  #39 - Comprehensive Documentation Update
 
-=== darzafrui ===
-Test files modified:
-16
-Test functions added (approximation):
-44
 
-=== JOSE MARIA SILVA GUZMAN ===
-Test files modified:
-2
-Test functions added (approximation):
-5
+JAVIER PALLARÉS GONZÁLEZ (javpalgon)  
+-------------------------------------
+Tests: 27 funciones de test
 
+Issues Cerradas: 9
+  #4  - Public Dataset Access
+  #5  - Advanced Search Functionality
+  #6  - Dataset Download Features
+  #14 - Authentication System Enhancement
+  #20 - API Documentation
+  #21 - Performance Optimization
+  #36 - Security Audit Implementation
+  #37 - Error Handling Improvements
+  #38 - Logging System Enhancement
+
+
+CELIA DORANTES RUIZ (celdorrui)
+--------------------------------
+Tests: 21 funciones de test
+
+Issues Cerradas: 7
+  #3  - Dataset Upload Workflow
+  #7  - CSV Validation System
+  #8  - Data Anonymization
+  #11 - Team Management Features
+  #12 - Dashboard Development
+  #16 - Notification System
+  #23 - Explore Module Enhancement
+
+
+JOSÉ MARÍA SILVA GUZMÁN (jossilguz)
+------------------------------------
+Tests: 7 funciones de test
+
+Issues Cerradas: 5
+  #13 - Webhook Integration
+  #15 - Fakenodo Implementation
+  #19 - Dataset Metadata Management
+  #24 - File Storage System
+  #29 - CI/CD Pipeline Configuration
+
+
+DARÍO ZAFRA RUIZ (darzafrui)
+----------------------------
+Tests: 51 funciones de test
+
+Issues Cerradas: 9
+  #17 - Database Migration System
+  #22 - Load Testing Framework (ZenHub)
+  #27 - Selenium Test Suite (ZenHub)
+  #28 - Docker Configuration (ZenHub)
+  #30 - SSL/HTTPS Implementation (ZenHub)
+  #32 - Code Coverage Improvements
+  #33 - Test Automation Enhancement
+  #34 - Responsive Dashboard
+
+
+TOTALES
+-------
+Total Tests: 169 funciones de test
+Total Issues: 38 issues cerradas
+
+NOTA: Las issues #22-#31 fueron gestionadas inicialmente en ZenHub 
+(Octubre-Noviembre 2024) y migradas a GitHub Projects para mantener 
+trazabilidad completa del trabajo.
+
+Última actualización: 15 de diciembre de 2025 - 12:37 pm

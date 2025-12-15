@@ -1,6 +1,6 @@
 # Padelhub
 * Grupo 3
-* Curso escolar: 2024/2025
+* Curso escolar: 2025/2026
 * Asignatura: Evolución y gestión de la configuración
 ## Miembros del grupo (en orden alfabético según apellido): 
 * [Dorantes Ruiz, Celia del Pilar](https://github.com/celdorrui)
@@ -10,11 +10,11 @@
 * [Zafra Ruiz, Darío](https://github.com/darzafrui)
 
 # Resumen de total de reuniones empleadas en el equipo
-* Total de reuniones: 9
+* Total de reuniones: 10
 * Total de reuniones presenciales: 5
-* Total de reuniones virtuales: 4
+* Total de reuniones virtuales: 5
 * Total de tiempo empleado en reuniones presenciales: 12.5 horas
-* Total de tiempo empleado en reuniones virtuales: 8 horas
+* Total de tiempo empleado en reuniones virtuales: 9.5 horas
 
 # Actas de acuerdos de las reuniones en las que se tomaron decisiones importantes
 
@@ -98,3 +98,13 @@
   * Acuerdo 2025-09-01: Implementar pruebas de carga con Locust para explore, fakenodo y profile
   * Acuerdo 2025-09-02: Eliminar triggers de PR en workflows
   * Acuerdo 2025-09-03: Completar documentación del proyecto en carpeta docs
+
+## ACTA 2025-10
+* Fecha: 15 de diciembre de 2025
+* Tipo: Presencial
+* Asistentes: Linares Borrego Guillermo, Dorantes Ruiz Celia del Pilar, Pallarés González Javier, Zafra Ruiz Darío, Silva Guzmán José María
+* Acuerdos tomados:
+  * Acuerdo 2025-10-01: Grabar vídeo explicativo del proyecto (aprox. 15 minutos)
+  * Acuerdo 2025-10-02: El vídeo debe cubrir: descripción general del proyecto, arquitectura y stack tecnológico, forma de trabajar (flujo Git, CI/CD), guía de contribución y despliegue
+  * Acuerdo 2025-10-03: Finalizar documentación técnica y métricas de desarrollo para entrega final
+  * Acuerdo 2025-10-04: Revisar y cerrar issue #39 (Comprehensive Documentation Update)

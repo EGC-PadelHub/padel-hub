@@ -66,15 +66,24 @@ Trabajamos con ramas principales y ramas de trabajo:
 
 Usamos **Conventional Commits** para mantener un historial limpio y automatizar el versionado.
 
-### Formato
+### Formato Obligatorio
+
+Todos los commits deben seguir esta estructura de **3 partes**:
 
 ```
-<tipo>: <descripción corta>
+<tipo>: <título> (máximo 50 caracteres)
 
-[cuerpo opcional]
-
-[footer opcional]
+<descripción detallada obligatoria>
+Explica el QUÉ y el POR QUÉ del cambio.
+Puede ocupar múltiples líneas.
 ```
+
+**Componentes obligatorios:**
+1. **Línea 1**: Título con tipo (`feat:`, `fix:`, `docs:`) + descripción corta
+2. **Línea 2**: Línea en blanco (separador)
+3. **Línea 3+**: Descripción detallada (mínimo 1 línea de contenido)
+
+⚠️ **El cuerpo es obligatorio** - el githook rechazará commits sin descripción detallada.
 
 ### Tipos de Commits
 
@@ -127,6 +136,11 @@ git commit -m "arreglo bug"                     # Sin feat: o fix:
 ```
 
 💡 **Tip**: Usa `git commit` (sin `-m`) para que se abra el editor con la plantilla que te guía.
+
+⚠️ **Importante**: El cuerpo del commit es **obligatorio**. El githook valida que existan al menos:
+- Línea 1: título con formato `feat:`, `fix:` o `docs:`
+- Línea 2: en blanco
+- Línea 3+: descripción detallada (mínimo 1 línea de contenido)
 
 #### 🔀 Para MERGES
 
@@ -242,6 +256,7 @@ git commit -m "fix: corrige error de login" -m "El formulario no validaba correc
    - Comportamiento esperado vs actual
    - Prioridad (Alta/Media/Baja)
    - Tipo (Planificada/No planificada)
+   - **Assignees** (quién trabajará en esto - obligatorio)
 5. Crea la issue (ej: #45)
 
 ### 2. Trabajar en la Solución
@@ -316,6 +331,7 @@ git push origin main
    - Propuesta de solución
    - Prioridad (Alta/Media/Baja)
    - Tipo (Planificada/No planificada)
+   - **Assignees** (quién trabajará en esto - obligatorio)
 5. Crea la issue (ej: #46)
 
 ### 2. Desarrollar la Feature
@@ -384,6 +400,7 @@ Para cambios que **solo afectan documentación** (sin código):
    - Tipo de documentación (README, API, Contributing, etc.)
    - Cambios propuestos
    - Prioridad (Alta/Media/Baja)
+   - **Assignees** (quién trabajará en esto - obligatorio)
 5. Crea la issue (ej: #47)
 
 ### 2. Crear Rama document/
@@ -460,15 +477,17 @@ Se incrementa con commits tipo `fix:`
 ### Versión MAJOR (2.0.0)
 Se incrementa con commits tipo `feat:`
 - Nuevas funcionalidades
+- Mejoras importantes
 
-### Sin Versión
+**Ejemplo**: `1.0.0` → `2.0.0`
+
+### Sin Versión (docs:)
 Los commits tipo `docs:` **NO incrementan versión**
 - Solo cambios de documentación
 - No se crea tag
 - No se hace deploy a producción
-- Mejoras importantes
 
-**Ejemplo**: `1.0.0` → `2.0.0`
+**Nota**: Los cambios de documentación se reflejan en el repositorio sin generar una nueva versión.
 
 ### Automatización
 
@@ -567,7 +586,10 @@ El hook `commit-msg` valida los mensajes automáticamente según la rama:
 ## ✅ Checklist Antes de Commitear
 
 - [ ] El código compila sin errores
-- [ ] Los tests pasan (`pytest`)
+- [ ] Los tests pasan:
+  - `rosemary test` (tests unitarios con pytest)
+  - `rosemary selenium` (tests E2E con Selenium)
+  - `rosemary locust` (tests de carga)
 - [ ] El mensaje de commit tiene título Y descripción
 - [ ] NO incluyes `#número` en commits individuales
 - [ ] Incluyes `Closes #número` en merges a main
@@ -577,6 +599,6 @@ El hook `commit-msg` valida los mensajes automáticamente según la rama:
 
 ## 🤝 Preguntas
 
-Si tienes dudas sobre el flujo de trabajo, abre una issue con la etiqueta `question` o contacta al equipo.
+Si tienes dudas sobre el flujo de trabajo, contacta al equipo o consulta la documentación del proyecto.
 
 ¡Gracias por contribuir! 🎾

@@ -15,8 +15,8 @@
 
 ## Enlaces de interés:
 * [Repositorio de código](https://github.com/EGC-PadelHub/padel-hub)
-* [Sistema desplegado en producción](https://padel-hub.onrender.com)
-* [Sistema desplegado en preproducción (trunk)](https://padel-hub-trunk.onrender.com)
+* [Sistema desplegado en producción](https://padel-hub-guilinbor.onrender.com/)
+* [Sistema desplegado en preproducción (trunk)](https://padel-hub-2.onrender.com/)
 * [Codacy Dashboard - Análisis de calidad](https://app.codacy.com/gh/EGC-PadelHub/padel-hub/dashboard)
 * [GitHub Actions - CI/CD Workflows](https://github.com/EGC-PadelHub/padel-hub/actions)
 

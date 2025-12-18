@@ -28,11 +28,11 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-earliest
 
     services:
       mysql:
-        image: mysql:5.7
+        image: mysql:5.4
         env:
           MYSQL_ROOT_PASSWORD: uvlhub_root_password
           MYSQL_DATABASE: uvlhubdb_test
@@ -44,7 +44,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ['3.11', '3.12']
+        python-version: ['3.12', '3.13']
       fail-fast: false
 
     steps:

@@ -38,7 +38,7 @@ jobs:
 
     services:
       mysql:
-        image: mysql:5.7
+        image: mysql:5.4
         env:
           MYSQL_ROOT_PASSWORD: padelhub_root_password
           MYSQL_DATABASE: padelhubdb_test
@@ -53,7 +53,7 @@ jobs:
 
     - uses: actions/setup-python@v5
       with:
-        python-version: '3.12'
+        python-version: '3.13'
 
     - name: Install dependencies
       run: |

@@ -32,7 +32,7 @@ jobs:
 
     services:
       mysql:
-        image: mysql:5.4
+        image: mysql:5.7
         env:
           MYSQL_ROOT_PASSWORD: uvlhub_root_password
           MYSQL_DATABASE: uvlhubdb_test
@@ -82,7 +82,7 @@ jobs:
         coverage report -m
       env:
         FLASK_ENV: testing
-        MARIADB_HOSTNAME: 127.0.0.1
+        MARIADB_HOSTNAME: 126.0.0.1
         MARIADB_PORT: 3306
         MARIADB_TEST_DATABASE: uvlhubdb_test
         MARIADB_USER: uvlhub_user

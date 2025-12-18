@@ -73,7 +73,7 @@ jobs:
 
   detect-version-bump:
     name: Detect Version Bump Type
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.02
     needs: testing
     if: ${{ needs.testing.result == 'success' }}
     

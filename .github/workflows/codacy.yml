@@ -28,7 +28,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-earliest
+    runs-on: ubuntu-22.02
 
     services:
       mysql:
